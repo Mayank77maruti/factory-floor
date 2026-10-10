@@ -17,7 +17,7 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initial poll on mount, and background refresh every 45s
+  // Single health check on initial load
   useEffect(() => {
     let isMounted = true;
     const runFetch = async () => {
@@ -42,10 +42,8 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
     };
 
     runFetch();
-    const interval = setInterval(runFetch, 45000);
     return () => {
       isMounted = false;
-      clearInterval(interval);
     };
   }, []);
 
@@ -151,7 +149,7 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
         <div
           role="dialog"
           aria-label="System Monitor Telemetry"
-          className="absolute right-0 top-full mt-2 w-[290px] sm:w-[320px] rounded-[4px] bg-[#FFFBF0] border-[1.5px] border-[#101418] shadow-[0_6px_20px_rgba(16,20,24,0.14)] p-3 text-[#101418] z-50 animate-in fade-in zoom-in-95 duration-150 font-mono select-none"
+          className="absolute right-0 top-full mt-2 w-[290px] sm:w-[320px] rounded-[4px] bg-[#FFF3C4] border-[1.5px] border-[#101418] shadow-[0_6px_20px_rgba(16,20,24,0.14)] p-3 text-[#101418] z-50 animate-in fade-in zoom-in-95 duration-150 font-mono select-none"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -171,7 +169,7 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
           </div>
 
           {/* Overall System Status Pill */}
-          <div className="flex items-center justify-between bg-[#FBF6E9] border border-[#101418]/20 rounded px-2.5 py-1.5 mb-2.5">
+          <div className="flex items-center justify-between bg-[#FFFBF0] border border-[#101418]/20 rounded px-2.5 py-1.5 mb-2.5">
             <span className="text-[10px] text-[#101418]/70 uppercase tracking-wider font-semibold">
               Cluster State
             </span>
@@ -192,8 +190,6 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
                   className={`w-1.5 h-1.5 rounded-full ${
                     healthData?.services.vertexAi.status === "healthy"
                       ? "bg-[#16A34A]"
-                      : healthData?.services.vertexAi.status === "mocked"
-                      ? "bg-[#1E43D8]"
                       : "bg-[#DC2626]"
                   }`}
                 />
@@ -203,8 +199,6 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
               <span className="text-[9.5px] font-bold text-[#101418]/80">
                 {healthData?.services.vertexAi.status === "healthy"
                   ? "LIVE (VERIFIED)"
-                  : healthData?.services.vertexAi.status === "mocked"
-                  ? "MOCKED"
                   : healthData?.services.vertexAi.status === "unavailable"
                   ? "ERROR"
                   : "READY"}
@@ -278,7 +272,7 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
 
           {/* Telemetry Footnote */}
           <div className="mt-1.5 text-[8.5px] text-[#101418]/60 tracking-tight leading-tight">
-            Live telemetry polled every 45s from /api/health.
+            Live telemetry checked on load from /api/health.
           </div>
         </div>
       )}
