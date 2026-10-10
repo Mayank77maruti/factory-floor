@@ -416,3 +416,568 @@ export const MOCK_EQUIPMENT_STATUS: EquipmentStatusSummary[] = [
 export const FRONTLINE_GUARDRAIL_MESSAGE =
   'I can pull the floor\'s history ("when was the press oil last changed?"), flag drifting equipment, check training certs, or watch stock levels. Try one of the suggestions below.';
 
+// ---------------------------------------------------------------------------
+// 7. MACHINE PARTS KNOWLEDGE BASE & DIAGNOSTICS (IMAGE INSPECTION)
+// ---------------------------------------------------------------------------
+
+export interface MachinePartDiagnostic {
+  id: string;
+  partName: string;
+  aliases: string[];
+  equipmentId: string;
+  equipmentName: string;
+  isSafe: boolean;
+  diagnosisText: string;
+  infoText?: string;
+  safeInspectionText?: string;
+  sopReference?: string;
+  checklist?: string[];
+  suggestedTicket?: {
+    code: string;
+    title: string;
+    status: TicketStatus;
+    meta: string;
+    icon: Ticket["icon"];
+    assignedToPersonaId: string;
+  };
+}
+
+export const MACHINE_PARTS_DIAGNOSTICS: MachinePartDiagnostic[] = [
+  {
+    id: "diag-bracket-line2",
+    partName: "Steel Mounting Bracket (Engine Line 2)",
+    aliases: [
+      "bracket",
+      "steel bracket",
+      "mounting bracket",
+      "line 2 bracket",
+      "engine line 2",
+      "loose bracket",
+      "is this bracket is loose",
+      "bracket loose",
+      "bracket safe",
+    ],
+    equipmentId: "eq-engine-line-2",
+    equipmentName: "Engine Line 2",
+    isSafe: false,
+    diagnosisText:
+      "No, it is not safe. Pause the work immediately. The steel bracket shows mechanical loosening and fastener displacement off datum. Operating under this condition risks severe misalignment on Engine Line 2. I have logged work order W-3324 and assigned it to Marcus T. in the Maintenance team as HIGH priority.",
+    infoText:
+      "This is the steel mounting bracket for Engine Line 2 (Part #BRK-ENG-02). Standard installation requires 6 M8 grade 8.8 bolts torqued to 45 Nm per SOP-ENG-14.",
+    safeInspectionText:
+      "The mounting bracket is seated against datum with all fasteners secured to 45 Nm per SOP-ENG-14.",
+    sopReference: "SOP-ENG-14 p2",
+    checklist: [
+      "Stop Engine Line 2 conveyor immediately",
+      "Tag out station feeder switch",
+      "Marcus T. (Maintenance) dispatched with calibrated torque wrench",
+      "Torque all 6 bracket bolts to 45 Nm per SOP-ENG-14",
+    ],
+    suggestedTicket: {
+      code: "W-3324",
+      title: "Fix loose steel bracket — Engine Line 2",
+      status: "HIGH",
+      meta: "ASSIGNED TO MARCUS T. · SAFETY STOP",
+      icon: "wrench",
+      assignedToPersonaId: "marcus",
+    },
+  },
+  {
+    id: "diag-hydraulic-valve-press3",
+    partName: "Hydraulic Relief Valve (Press 3)",
+    aliases: ["valve", "relief valve", "hydraulic", "hydraulic line", "manifold", "press 3"],
+    equipmentId: "eq-press-03",
+    equipmentName: "Press 3",
+    isSafe: false,
+    diagnosisText:
+      "No, it is not safe. Pause the work immediately. The hydraulic valve shows fluid seepage and the manifold temperature is drifting 13° over spec. Continuing cycle risks pressure blow-out. I have logged emergency work order W-3325 and assigned it to Marcus T. in Maintenance.",
+    sopReference: "SOP-PRS-03",
+    checklist: [
+      "Depressurize Press 3 hydraulic accumulator",
+      "Lock out primary hydraulic power pack",
+      "Marcus T. (Maintenance) replacing Viton O-ring seal",
+      "Verify pressure stability at 210 bar before restarting",
+    ],
+    suggestedTicket: {
+      code: "W-3325",
+      title: "Hydraulic relief valve leakage & temp drift — Press 3",
+      status: "HIGH",
+      meta: "ASSIGNED TO MARCUS T. · EMERGENCY",
+      icon: "thermometer",
+      assignedToPersonaId: "marcus",
+    },
+  },
+  {
+    id: "diag-coolant-pump-cnc3",
+    partName: "Coolant Pump Mechanical Seal (CNC-3)",
+    aliases: ["pump", "coolant pump", "pump seal", "seal", "impeller", "cnc-3", "cnc"],
+    equipmentId: "eq-cnc-03",
+    equipmentName: "CNC-3",
+    isSafe: false,
+    diagnosisText:
+      "No, this pump seal is degraded and coolant pressure is dropping below 15 PSI. High-speed spindle cutting must be halted to prevent carbide thermal fracture. Work order W-3326 is logged for Marcus T. awaiting the replacement seal kit arriving Thursday.",
+    sopReference: "SOP-CNC-07 p3",
+    checklist: [
+      "Halt automated cycling on CNC-3",
+      "Switch machine to standby mode",
+      "Seal kit arriving Thursday (Cage D / PO-1039)",
+      "Marcus T. scheduled for changeover",
+    ],
+    suggestedTicket: {
+      code: "W-3326",
+      title: "Coolant pump mechanical seal degradation — CNC-3",
+      status: "WAITING PARTS",
+      meta: "ASSIGNED TO MARCUS T. · SEAL ETA THU",
+      icon: "droplet",
+      assignedToPersonaId: "marcus",
+    },
+  },
+  {
+    id: "diag-cnmg-insert",
+    partName: "CNMG 432 Carbide Turning Insert",
+    aliases: ["insert", "cnmg", "carbide", "cutting tool", "turning insert", "station 4"],
+    equipmentId: "eq-station-04",
+    equipmentName: "Station 4",
+    isSafe: false,
+    diagnosisText:
+      "No, this insert is not safe for production cutting. Flank wear exceeds 0.35 mm and micro-fractures are visible along the cutting tip. Continuing will result in surface roughness failure on Job 2214. I have assigned a tool change ticket to Marcus T. in Maintenance.",
+    checklist: [
+      "Index or replace CNMG 432 insert at Station 4",
+      "Inspect toolholder pocket for metal swarf",
+      "Check Tool Crib B stock (shows 3 remaining)",
+      "Log wear measurement in tool calibration sheet",
+    ],
+    suggestedTicket: {
+      code: "W-3327",
+      title: "Chipped CNMG 432 insert replacement — Station 4",
+      status: "OPEN",
+      meta: "ASSIGNED TO MARCUS T. · FROM CRIB B",
+      icon: "ruler",
+      assignedToPersonaId: "marcus",
+    },
+  },
+  {
+    id: "diag-bearing-conveyor",
+    partName: "6205-2RS Deep Groove Ball Bearing",
+    aliases: ["bearing", "ball bearing", "roller", "conveyor", "conveyor 3"],
+    equipmentId: "eq-conv-03",
+    equipmentName: "Conveyor 3",
+    isSafe: false,
+    diagnosisText:
+      "No, this bearing has severe raceway wear and grease seal breach. Running under load risks seizure and drive belt snapping on Conveyor 3. I have assigned an urgent maintenance ticket to Marcus T.",
+    checklist: [
+      "Lock out Conveyor 3 drive motor",
+      "Pull worn 6205-2RS bearing using puller",
+      "Fit fresh 6205-2RS bearing from Tool Crib B (2 in stock)",
+      "Verify free manual rotation before clearing lockout",
+    ],
+    suggestedTicket: {
+      code: "W-3328",
+      title: "Worn 6205-2RS bearing replacement — Conveyor 3",
+      status: "OPEN",
+      meta: "ASSIGNED TO MARCUS T. · CRIB B HAS 2",
+      icon: "gear",
+      assignedToPersonaId: "marcus",
+    },
+  },
+  {
+    id: "diag-spindle-chuck-lathe1",
+    partName: "Spindle Collet Chuck (CNC Lathe 1)",
+    aliases: ["chuck", "collet", "spindle", "lathe", "clamping", "lathe 1"],
+    equipmentId: "eq-cnc-lathe-01",
+    equipmentName: "CNC Lathe 1",
+    isSafe: false,
+    diagnosisText:
+      "No, this collet chuck has excessive radial runout (>0.08 mm) and hydraulic drawbar pressure instability. Running high-RPM operations will throw the workpiece. I have halted the station and logged emergency work order W-3329 for Marcus T. in Maintenance.",
+    sopReference: "SOP-CNC-12",
+    checklist: [
+      "Lock out CNC Lathe 1 spindle motor",
+      "Inspect collet taper for galling and metal chips",
+      "Replace master collet pads from Tool Crib B",
+      "Measure dial-indicator runout (<0.01 mm required)",
+    ],
+    suggestedTicket: {
+      code: "W-3329",
+      title: "Spindle collet chuck runout & clamp failure — CNC Lathe 1",
+      status: "HIGH",
+      meta: "ASSIGNED TO MARCUS T. · SPINDLE SAFETY",
+      icon: "gear",
+      assignedToPersonaId: "marcus",
+    },
+  },
+  {
+    id: "diag-pneumatic-gripper-line1",
+    partName: "Pneumatic Gripper Jaws (Engine Line 1)",
+    aliases: ["gripper", "jaw", "pneumatic", "robot gripper", "end effector", "engine line 1"],
+    equipmentId: "eq-engine-line-1",
+    equipmentName: "Engine Line 1",
+    isSafe: false,
+    diagnosisText:
+      "No, the pneumatic gripper seal is leaking air and finger alignment has drifted by 2.4 mm. Parts risk slipping mid-transfer across Engine Line 1. I have logged work order W-3330 for Marcus T. in Maintenance.",
+    sopReference: "SOP-ENG-08",
+    checklist: [
+      "Isolate 6-bar pneumatic air supply",
+      "Replace polyurethane gripper pads",
+      "Marcus T. recalibrating zero-datum sensor",
+      "Dry-cycle 5 parts before releasing safety gate",
+    ],
+    suggestedTicket: {
+      code: "W-3330",
+      title: "Pneumatic gripper misalignment & seal leak — Engine Line 1",
+      status: "OPEN",
+      meta: "ASSIGNED TO MARCUS T. · SPARES IN CRIB B",
+      icon: "wrench",
+      assignedToPersonaId: "marcus",
+    },
+  },
+  {
+    id: "diag-fastener-screw",
+    partName: "M4 Torx Pan-Head Machine Screw (Grade 8.8)",
+    aliases: [
+      "screw",
+      "screws",
+      "torx",
+      "fastener",
+      "fasteners",
+      "machine screw",
+      "bolt",
+      "bolts",
+      "hardware",
+      "pan head",
+      "pan-head",
+      "threaded fastener",
+      "m4",
+      "t20",
+    ],
+    equipmentId: "eq-station-04",
+    equipmentName: "Tool Crib B / Station 4 Assembly",
+    isSafe: true,
+    infoText:
+      "This is an M4 Torx pan-head machine screw (Grade 8.8 zinc-plated). Drive recess and metric thread pitch are clean and intact. Stocked in Tool Crib B (Bin C-12, 140 on hand). Standard tightening torque is 3.5 Nm per SOP-ASM-02.",
+    safeInspectionText:
+      "Yes, this M4 Torx pan-head machine screw is clean, thread pitch is intact with no stripping or shear damage, and it is safe to use. Standard assembly torque is 3.5 Nm per SOP-ASM-02.",
+    diagnosisText:
+      "Yes, this M4 Torx pan-head machine screw is clean, thread pitch is intact with no stripping or shear damage, and it is safe to use. Standard assembly torque is 3.5 Nm per SOP-ASM-02.",
+    sopReference: "SOP-ASM-02",
+    checklist: [
+      "Inspect M4 thread pitch for burrs or stripping",
+      "Verify Torx T20 drive bit fit",
+      "Standard torque 3.5 Nm per SOP-ASM-02",
+    ],
+  },
+];
+
+export const NON_MACHINE_KEYWORDS = [
+  "cat",
+  "dog",
+  "doggy",
+  "puppy",
+  "kitten",
+  "pet",
+  "selfie",
+  "person",
+  "human",
+  "face",
+  "people",
+  "portrait",
+  "food",
+  "pizza",
+  "burger",
+  "sandwich",
+  "lunch",
+  "dinner",
+  "breakfast",
+  "meal",
+  "salad",
+  "coffee",
+  "tea",
+  "snack",
+  "fruit",
+  "flower",
+  "tree",
+  "plant",
+  "nature",
+  "landscape",
+  "sky",
+  "sunset",
+  "car",
+  "shoe",
+  "shoes",
+  "shirt",
+  "dress",
+  "clothes",
+  "furniture",
+  "chair",
+  "table",
+  "bed",
+  "sofa",
+  "couch",
+  "house",
+  "building",
+  "room",
+  "phone",
+  "smartphone",
+  "laptop",
+  "computer",
+  "animal",
+  "baby",
+  "sunglasses",
+  "bottle",
+  "cup",
+];
+
+export const FRONTLINE_PHOTO_REJECTION_MESSAGE =
+  "I can only assist with factory machinery, industrial equipment, and tooling parts. Please provide an image of a shop-floor machine or mechanical component.";
+
+/**
+ * Detects whether the operator's message explicitly inquires about safety,
+ * looseness, operational risk, or work stoppage.
+ */
+export function isExplicitSafetyOrLoosenessQuestion(query: string): boolean {
+  const q = (query || "").toLowerCase();
+  const normalized = q.replace(/[^a-z0-9]+/g, " ").trim();
+
+  if (!normalized) return false;
+
+  const explicitPhrases = [
+    "safe to use",
+    "safe to work",
+    "safe to operate",
+    "safe to run",
+    "is it safe",
+    "is this safe",
+    "are these safe",
+    "should i stop",
+    "should i pause",
+    "pause the work",
+    "stop work",
+    "stop the work",
+    "is it loose",
+    "is this loose",
+    "loose or not",
+    "loose or safe",
+    "safe or not",
+    "is this part loose",
+    "this part is loose or not",
+    "this part is loose",
+    "is this bracket is loose",
+    "is this broken",
+    "safety check",
+  ];
+
+  if (explicitPhrases.some((phrase) => normalized.includes(phrase))) {
+    return true;
+  }
+
+  // Combined checks
+  if (normalized.includes("loose") && normalized.includes("safe")) {
+    return true;
+  }
+
+  if (
+    normalized.includes("safe") &&
+    (normalized.includes("work") ||
+      normalized.includes("operate") ||
+      normalized.includes("use") ||
+      normalized.includes("line") ||
+      normalized.includes("run") ||
+      normalized.includes("part"))
+  ) {
+    return true;
+  }
+
+  if (
+    normalized.includes("loose") &&
+    (normalized.includes("bracket") ||
+      normalized.includes("work") ||
+      normalized.includes("run") ||
+      normalized.includes("line") ||
+      normalized.includes("part"))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Validates whether an uploaded image depicts an industrial machine part / tool,
+ * and extracts diagnosis + ticket recommendations based on shop-floor mock records.
+ *
+ * ONLY flags a safety stop (isSafetyStop: true) when the user explicitly asks
+ * a safety or looseness question AND the part is in an unsafe/loose condition.
+ */
+export function diagnoseMachinePart(params: {
+  query: string;
+  imageName?: string;
+  ocrText?: string;
+}): {
+  isMachinePart: boolean;
+  isSafetyStop: boolean;
+  diagnostic?: MachinePartDiagnostic;
+  message: string;
+  ticket?: MachinePartDiagnostic["suggestedTicket"];
+  checklist?: string[];
+} {
+  const q = (params.query || "").toLowerCase();
+  const imgName = (params.imageName || "").toLowerCase();
+  const ocr = (params.ocrText || "").toLowerCase();
+
+  // Normalize delimiters (replace underscores, hyphens, slashes, periods with spaces)
+  const normImg = imgName.replace(/[^a-z0-9]+/g, " ");
+  const normOcr = ocr.replace(/[^a-z0-9]+/g, " ");
+  const normQ = q.replace(/[^a-z0-9]+/g, " ");
+  const combined = `${normQ} ${normImg} ${normOcr}`.trim();
+
+  // Check if image filename, OCR text, or query clearly represents a non-machine item
+  const isNonMachine = NON_MACHINE_KEYWORDS.some((kw) => {
+    const regex = new RegExp(`\\b${kw}\\b`, "i");
+    return (
+      regex.test(normImg) ||
+      regex.test(normOcr) ||
+      (regex.test(normQ) &&
+        !normQ.includes("bracket") &&
+        !normQ.includes("machine") &&
+        !normQ.includes("tool") &&
+        !normQ.includes("screw") &&
+        !normQ.includes("bolt") &&
+        !normQ.includes("fastener"))
+    );
+  });
+
+  const hasShopFloorKeyword =
+    combined.includes("bracket") ||
+    combined.includes("machine") ||
+    combined.includes("tool") ||
+    combined.includes("valve") ||
+    combined.includes("pump") ||
+    combined.includes("insert") ||
+    combined.includes("bearing") ||
+    combined.includes("spindle") ||
+    combined.includes("gripper") ||
+    combined.includes("press") ||
+    combined.includes("lathe") ||
+    combined.includes("cnc") ||
+    combined.includes("screw") ||
+    combined.includes("bolt") ||
+    combined.includes("fastener") ||
+    combined.includes("torx") ||
+    combined.includes("hardware") ||
+    combined.includes("nut") ||
+    combined.includes("washer") ||
+    combined.includes("thread") ||
+    combined.includes("flange") ||
+    combined.includes("motor") ||
+    combined.includes("gear") ||
+    combined.includes("coupling");
+
+  if (isNonMachine && !hasShopFloorKeyword) {
+    return {
+      isMachinePart: false,
+      isSafetyStop: false,
+      message: FRONTLINE_PHOTO_REJECTION_MESSAGE,
+    };
+  }
+
+  const isSafetyQuestion = isExplicitSafetyOrLoosenessQuestion(params.query);
+
+  // 1. Find matching diagnostic by aliases
+  for (const diag of MACHINE_PARTS_DIAGNOSTICS) {
+    if (diag.aliases.some((alias) => combined.includes(alias))) {
+      // If user did NOT explicitly ask if it is safe or loose, do NOT stop work!
+      if (!isSafetyQuestion) {
+        return {
+          isMachinePart: true,
+          isSafetyStop: false,
+          diagnostic: diag,
+          message:
+            diag.infoText ||
+            `This is a recognized shop-floor component: ${diag.partName} (${diag.equipmentName}).`,
+        };
+      }
+
+      // User explicitly asked a safety or looseness question:
+      if (diag.isSafe) {
+        return {
+          isMachinePart: true,
+          isSafetyStop: false,
+          diagnostic: diag,
+          message: diag.safeInspectionText || diag.diagnosisText,
+          checklist: diag.checklist,
+        };
+      }
+
+      // Unsafe component under safety question: issue safety stop + maintenance ticket
+      return {
+        isMachinePart: true,
+        isSafetyStop: true,
+        diagnostic: diag,
+        message: diag.diagnosisText,
+        ticket: diag.suggestedTicket,
+        checklist: diag.checklist,
+      };
+    }
+  }
+
+  // 2. If shop-floor keyword or query matched but no specific diagnostic matched:
+  if (hasShopFloorKeyword) {
+    if (
+      combined.includes("screw") ||
+      combined.includes("bolt") ||
+      combined.includes("fastener") ||
+      combined.includes("torx") ||
+      combined.includes("nut") ||
+      combined.includes("washer")
+    ) {
+      const screwDiag = MACHINE_PARTS_DIAGNOSTICS.find((d) => d.id === "diag-fastener-screw");
+      if (screwDiag) {
+        if (!isSafetyQuestion) {
+          return {
+            isMachinePart: true,
+            isSafetyStop: false,
+            diagnostic: screwDiag,
+            message:
+              screwDiag.infoText ||
+              "This is an M4 Torx pan-head machine screw (Grade 8.8 zinc-plated). Clean drive recess and metric thread pitch. Stocked in Tool Crib B (Bin C-12). Standard torque is 3.5 Nm per SOP-ASM-02.",
+          };
+        }
+        return {
+          isMachinePart: true,
+          isSafetyStop: false,
+          diagnostic: screwDiag,
+          message: screwDiag.safeInspectionText || screwDiag.diagnosisText,
+          checklist: screwDiag.checklist,
+        };
+      }
+    }
+
+    const defaultDiag = MACHINE_PARTS_DIAGNOSTICS[0];
+    if (isSafetyQuestion) {
+      return {
+        isMachinePart: true,
+        isSafetyStop: true,
+        diagnostic: defaultDiag,
+        message: defaultDiag.diagnosisText,
+        ticket: defaultDiag.suggestedTicket,
+        checklist: defaultDiag.checklist,
+      };
+    }
+
+    return {
+      isMachinePart: true,
+      isSafetyStop: false,
+      diagnostic: defaultDiag,
+      message:
+        defaultDiag.infoText ||
+        "This is a recognized manufacturing component on Engine Line 2.",
+    };
+  }
+
+  // 3. Rejection
+  return {
+    isMachinePart: false,
+    isSafetyStop: false,
+    message: FRONTLINE_PHOTO_REJECTION_MESSAGE,
+  };
+}
+

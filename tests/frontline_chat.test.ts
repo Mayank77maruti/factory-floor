@@ -6,11 +6,15 @@ import { retrieveMockRecords } from "../lib/frontline/retriever";
 import { classifyFrontlineIntent } from "../lib/frontline/router";
 import {
   FRONTLINE_GUARDRAIL_MESSAGE,
+  FRONTLINE_PHOTO_REJECTION_MESSAGE,
+  diagnoseMachinePart,
+  MACHINE_PARTS_DIAGNOSTICS,
   MOCK_INVENTORY,
   MOCK_MAINTENANCE_HISTORY,
   MOCK_TRAINING_RECORDS,
   PERSONAS,
 } from "../lib/mock/frontlineData";
+import { GET as handleFrontlineTicketsGet } from "../app/api/frontline/tickets/route";
 import { NextRequest } from "next/server";
 
 // =========================================================================
@@ -323,5 +327,208 @@ test("Plain-text Formatter: Preserves existing scripted oil history message unch
   const cannedMsg = "Here's the last change — straight from the floor record.";
   const formatted = formatFrontlinePlainText(cannedMsg);
   assert.strictEqual(formatted, cannedMsg);
+});
+
+// =========================================================================
+// 7. FRONTLINE PHOTO INSPECTION, OCR VERIFICATION & TICKET ASSIGNMENT
+// =========================================================================
+
+test("Photo Inspection: Rejects non-machine photo with specific factory message", async () => {
+  const req = new NextRequest("http://localhost:3000/api/frontline/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "Check this photo please",
+      image: {
+        name: "my_pet_cat.jpg",
+        data: "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        mimeType: "image/jpeg",
+      },
+    }),
+  });
+
+  const res = await handleFrontlineChat(req);
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.path, "PATH_IMAGE_REJECTED");
+  assert.strictEqual(data.isMachinePart, false);
+  assert.strictEqual(data.text, FRONTLINE_PHOTO_REJECTION_MESSAGE);
+});
+
+test("Photo Inspection: Rejects food or human selfie images", async () => {
+  const req = new NextRequest("http://localhost:3000/api/frontline/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "Is this lunch safe?",
+      image: {
+        name: "pizza_slice.png",
+        data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
+        mimeType: "image/png",
+      },
+    }),
+  });
+
+  const res = await handleFrontlineChat(req);
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.path, "PATH_IMAGE_REJECTED");
+  assert.strictEqual(data.isMachinePart, false);
+  assert.strictEqual(data.text, FRONTLINE_PHOTO_REJECTION_MESSAGE);
+});
+
+test("Photo Inspection: Accepts loose bracket photo, pauses work, assigns HIGH ticket W-3324 to Marcus T.", async () => {
+  const req = new NextRequest("http://localhost:3000/api/frontline/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "is this bracket is loose is it safe to use",
+      image: {
+        name: "bracket_engine_line2.jpg",
+        data: "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        mimeType: "image/jpeg",
+      },
+    }),
+  });
+
+  const res = await handleFrontlineChat(req);
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.path, "PATH_IMAGE_ACCEPTED");
+  assert.strictEqual(data.isMachinePart, true);
+  assert.ok(data.text.includes("No, it is not safe. Pause the work immediately."));
+  assert.ok(data.text.includes("Marcus T."));
+  assert.strictEqual(data.ticket.code, "W-3324");
+  assert.strictEqual(data.ticket.status, "HIGH");
+  assert.strictEqual(data.ticket.assignedToPersonaId, "marcus");
+  assert.ok(Array.isArray(data.checklist));
+  assert.ok(data.checklist.some((step: string) => step.includes("Stop Engine Line 2")));
+  assert.ok(data.savedTicketRecord);
+  assert.strictEqual(data.savedTicketRecord.code, "W-3324");
+});
+
+test("Chat Query: Direct text question about loose bracket safety triggers safety stop & Marcus T. ticket", async () => {
+  const req = new NextRequest("http://localhost:3000/api/frontline/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "is this bracket is loose is it safe to use",
+    }),
+  });
+
+  const res = await handleFrontlineChat(req);
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.path, "PATH_IMAGE_ACCEPTED");
+  assert.strictEqual(data.isMachinePart, true);
+  assert.ok(data.text.includes("No, it is not safe. Pause the work immediately."));
+  assert.strictEqual(data.ticket.code, "W-3324");
+  assert.strictEqual(data.ticket.status, "HIGH");
+});
+
+test("Photo Inspection: Screw photo with 'this is a screw' is accepted as machine part and does NOT trigger safety stop or work pause", async () => {
+  const req = new NextRequest("http://localhost:3000/api/frontline/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "this is a screw",
+      image: {
+        name: "screw.jpg",
+        data: "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        mimeType: "image/jpeg",
+      },
+    }),
+  });
+
+  const res = await handleFrontlineChat(req);
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.path, "PATH_IMAGE_ACCEPTED");
+  assert.strictEqual(data.isMachinePart, true);
+  assert.strictEqual(data.isSafetyStop, false);
+  assert.strictEqual(data.ticket, undefined);
+  assert.ok(data.text.includes("M4 Torx pan-head machine screw"));
+  assert.ok(!data.text.toLowerCase().includes("pause the work immediately"));
+  assert.ok(!data.text.toLowerCase().includes("no, it is not safe"));
+});
+
+test("Photo Inspection: Screw photo with 'is this screw safe to use ?' is accepted and confirms screw is safe without work pause", async () => {
+  const req = new NextRequest("http://localhost:3000/api/frontline/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "is this screw safe to use ?",
+      image: {
+        name: "screw.jpg",
+        data: "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        mimeType: "image/jpeg",
+      },
+    }),
+  });
+
+  const res = await handleFrontlineChat(req);
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.path, "PATH_IMAGE_ACCEPTED");
+  assert.strictEqual(data.isMachinePart, true);
+  assert.strictEqual(data.isSafetyStop, false);
+  assert.strictEqual(data.ticket, undefined);
+  assert.ok(data.text.includes("safe to use"));
+  assert.ok(!data.text.toLowerCase().includes("pause the work immediately"));
+  assert.ok(!data.text.toLowerCase().includes("no, it is not safe"));
+});
+
+test("Photo Inspection: Hydraulic relief valve photo with safety inquiry triggers emergency ticket W-3325 for Marcus T.", async () => {
+  const req = new NextRequest("http://localhost:3000/api/frontline/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "Inspect this relief valve on Press 3, is it safe to operate?",
+      image: {
+        name: "press3_relief_valve.jpg",
+        data: "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        mimeType: "image/jpeg",
+      },
+    }),
+  });
+
+  const res = await handleFrontlineChat(req);
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.path, "PATH_IMAGE_ACCEPTED");
+  assert.strictEqual(data.isSafetyStop, true);
+  assert.strictEqual(data.ticket.code, "W-3325");
+  assert.strictEqual(data.ticket.assignedToPersonaId, "marcus");
+});
+
+test("Photo Inspection: Coolant pump seal photo with safety inquiry triggers ticket W-3326 for Marcus T.", async () => {
+  const req = new NextRequest("http://localhost:3000/api/frontline/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "Coolant pressure dropped, is it safe or should I stop work?",
+      image: {
+        name: "cnc3_pump_seal.jpg",
+        data: "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        mimeType: "image/jpeg",
+      },
+    }),
+  });
+
+  const res = await handleFrontlineChat(req);
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.path, "PATH_IMAGE_ACCEPTED");
+  assert.strictEqual(data.isSafetyStop, true);
+  assert.strictEqual(data.ticket.code, "W-3326");
+  assert.strictEqual(data.ticket.status, "WAITING PARTS");
+});
+
+test("Tickets API: GET /api/frontline/tickets retrieves persisted frontline tickets", async () => {
+  const res = await handleFrontlineTicketsGet();
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.ok(Array.isArray(data.tickets));
+  assert.ok(data.tickets.some((t: any) => t.code === "W-3324"));
 });
 

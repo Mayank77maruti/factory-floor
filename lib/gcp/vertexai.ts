@@ -405,6 +405,98 @@ export async function callGeminiMultimodalJson<T>(params: {
   }
 }
 
+/**
+ * Execute a multimodal prompt with Vertex AI Gemini returning plain text.
+ * Used for Frontline inspection photo analysis, OCR, and component verification.
+ */
+export async function callGeminiMultimodalText(params: {
+  systemInstruction?: string;
+  parts: (
+    | { text: string }
+    | { inlineData: { mimeType: string; data: string } }
+    | { fileData: { fileUri: string; mimeType: string } }
+  )[];
+  temperature?: number;
+  timeoutMs?: number;
+  stageName?: string;
+  requestId?: string;
+}): Promise<{ text: string | null; latencyMs: number; error?: string }> {
+  const {
+    systemInstruction,
+    parts,
+    temperature = 0.2,
+    timeoutMs = 30000,
+    stageName = "frontline-multimodal-text",
+    requestId,
+  } = params;
+
+  const client = getVertexClient();
+  if (!client) {
+    return { text: null, latencyMs: 0, error: "Vertex AI client not initialized (mock mode or missing credentials)" };
+  }
+
+  const startTime = Date.now();
+
+  try {
+    const generativeModel = client.getGenerativeModel({
+      model: config.vertexModel,
+      generationConfig: {
+        temperature,
+        maxOutputTokens: 4096,
+      },
+      systemInstruction: systemInstruction
+        ? {
+            role: "system",
+            parts: [{ text: systemInstruction }],
+          }
+        : undefined,
+    });
+
+    const result = await executeWithRetry(
+      async () => {
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Vertex AI multimodal text timed out after ${timeoutMs}ms`)), timeoutMs)
+        );
+        const callPromise = generativeModel.generateContent({
+          contents: [{ role: "user", parts }],
+        });
+        return Promise.race([callPromise, timeoutPromise]);
+      },
+      { stageName, requestId }
+    );
+
+    const latencyMs = Date.now() - startTime;
+    const rawText = result.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!rawText) {
+      throw new Error("Empty response returned by Vertex AI Gemini model.");
+    }
+
+    logInfo(`Vertex AI multimodal text completed successfully`, {
+      service: "vertexai",
+      stageName,
+      requestId,
+      model: config.vertexModel,
+      latencyMs,
+      status: "SUCCESS",
+    });
+
+    return { text: rawText.trim(), latencyMs };
+  } catch (err) {
+    const latencyMs = Date.now() - startTime;
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    logError(`Vertex AI multimodal text execution failed for ${stageName}`, err, {
+      service: "vertexai",
+      stageName,
+      requestId,
+      model: config.vertexModel,
+      latencyMs,
+      status: "FAILED",
+    });
+    return { text: null, latencyMs, error: errorMsg };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // ARCHITECT STAGE 3: Orientation Analysis
 // ---------------------------------------------------------------------------

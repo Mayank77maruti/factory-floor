@@ -21,7 +21,14 @@ export { PERSONAS };
 export type { Persona, Ticket, TicketStatus };
 
 type MessageType =
-  | { type: "user"; text: string }
+  | {
+      type: "user";
+      text: string;
+      image?: {
+        name: string;
+        dataUrl: string;
+      };
+    }
   | { type: "agent_text"; text: string; showLabel?: boolean }
   | { type: "alert"; text: string }
   | {
@@ -478,6 +485,7 @@ function HistoryCard() {
 // =========================================================================
 export default function FrontlinePage() {
   const [view, setView] = useState<"gate" | "home" | "chat">("gate");
+  const [personas, setPersonas] = useState<Persona[]>(PERSONAS);
   const [currentPersona, setCurrentPersona] = useState<Persona>(PERSONAS[0]);
   const [selectedGateId, setSelectedGateId] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -488,6 +496,138 @@ export default function FrontlinePage() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const dropdownButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Attached image states for Home & Chat (photo uploads only)
+  const [homeAttachedImage, setHomeAttachedImage] = useState<{
+    file: File;
+    name: string;
+    dataUrl: string;
+    mimeType: string;
+  } | null>(null);
+  const [chatAttachedImage, setChatAttachedImage] = useState<{
+    file: File;
+    name: string;
+    dataUrl: string;
+    mimeType: string;
+  } | null>(null);
+
+  const homeFileInputRef = useRef<HTMLInputElement | null>(null);
+  const chatFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Popover menu state for attachment (+) button
+  const [isHomeAttachMenuOpen, setIsHomeAttachMenuOpen] = useState(false);
+  const [isChatAttachMenuOpen, setIsChatAttachMenuOpen] = useState(false);
+  const homeAttachMenuRef = useRef<HTMLDivElement | null>(null);
+  const chatAttachMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        homeAttachMenuRef.current &&
+        !homeAttachMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsHomeAttachMenuOpen(false);
+      }
+      if (
+        chatAttachMenuRef.current &&
+        !chatAttachMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsChatAttachMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  const handleImageSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: "home" | "chat"
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Only photos and image files (.jpg, .png, .webp) can be attached.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const img = {
+        file,
+        name: file.name,
+        dataUrl,
+        mimeType: file.type || "image/jpeg",
+      };
+      if (target === "home") {
+        setHomeAttachedImage(img);
+      } else {
+        setChatAttachedImage(img);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  // Load any previously persisted tickets from Firestore/Cloud Storage on mount
+  useEffect(() => {
+    async function loadPersistedTickets() {
+      try {
+        const res = await fetch("/api/frontline/tickets");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.tickets && Array.isArray(data.tickets) && data.tickets.length > 0) {
+            setPersonas((prev) =>
+              prev.map((p) => {
+                const matching = data.tickets.filter(
+                  (t: any) => t.assignedTo === p.id || (!t.assignedTo && p.id === "marcus")
+                );
+                if (!matching.length) return p;
+                const newTickets = [...p.tickets];
+                for (const mt of matching) {
+                  if (!newTickets.some((existing) => existing.code === mt.code)) {
+                    newTickets.unshift({
+                      code: mt.code,
+                      title: mt.title,
+                      status: mt.status,
+                      meta: mt.meta,
+                      icon: mt.icon || "wrench",
+                    });
+                  }
+                }
+                return { ...p, tickets: newTickets };
+              })
+            );
+            setCurrentPersona((curr) => {
+              const matching = data.tickets.filter(
+                (t: any) => t.assignedTo === curr.id || (!t.assignedTo && curr.id === "marcus")
+              );
+              if (!matching.length) return curr;
+              const newTickets = [...curr.tickets];
+              for (const mt of matching) {
+                if (!newTickets.some((existing) => existing.code === mt.code)) {
+                  newTickets.unshift({
+                    code: mt.code,
+                    title: mt.title,
+                    status: mt.status,
+                    meta: mt.meta,
+                    icon: mt.icon || "wrench",
+                  });
+                }
+              }
+              return { ...curr, tickets: newTickets };
+            });
+          }
+        }
+      } catch {
+        // Ignore background fetch error
+      }
+    }
+    loadPersistedTickets();
+  }, []);
 
   // Read localStorage on initial mount
   useEffect(() => {
@@ -578,8 +718,144 @@ export default function FrontlinePage() {
   ];
 
   // Centralized route executor across chat input and home launcher
-  const executeRoute = async (raw: string) => {
+  const executeRoute = async (
+    raw: string,
+    attachedImage?: { name: string; dataUrl: string; mimeType: string } | null
+  ) => {
     setIsTyping(true);
+
+    const isBracketSafetyQuestion =
+      raw.toLowerCase().includes("bracket") ||
+      (raw.toLowerCase().includes("loose") && raw.toLowerCase().includes("safe"));
+
+    // If an image is attached OR if it's a bracket safety question, send directly to backend inspection
+    if (attachedImage || isBracketSafetyQuestion) {
+      try {
+        const res = await fetch("/api/frontline/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: raw,
+            personaId: currentPersona.id,
+            canApprovePo,
+            image: attachedImage
+              ? {
+                  name: attachedImage.name,
+                  data: attachedImage.dataUrl,
+                  mimeType: attachedImage.mimeType,
+                }
+              : undefined,
+          }),
+        });
+
+        const data = await res.json();
+        setIsTyping(false);
+
+        if (!res.ok || data.error) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: "agent_text",
+              text: `⚠️ Image inspection failed: ${data.details || data.error || "Inspection service error"}`,
+              showLabel: true,
+            },
+          ]);
+          return;
+        }
+
+        if (data.path === "PATH_IMAGE_REJECTED") {
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: "agent_text",
+              text: data.text,
+              showLabel: true,
+            },
+          ]);
+          return;
+        }
+
+        if (data.path === "PATH_IMAGE_ACCEPTED") {
+          if (data.isSafetyStop && data.ticket) {
+            const newTicket: Ticket = {
+              code: data.ticket.code,
+              title: data.ticket.title,
+              status: data.ticket.status,
+              meta: data.ticket.meta,
+              icon: data.ticket.icon || "wrench",
+            };
+
+            setPersonas((prev) =>
+              prev.map((p) => {
+                if (p.id === "marcus") {
+                  if (p.tickets.some((t) => t.code === newTicket.code)) return p;
+                  return { ...p, tickets: [newTicket, ...p.tickets] };
+                }
+                return p;
+              })
+            );
+
+            setCurrentPersona((curr) => {
+              if (curr.id === "marcus") {
+                if (curr.tickets.some((t) => t.code === newTicket.code)) return curr;
+                return { ...curr, tickets: [newTicket, ...curr.tickets] };
+              }
+              return curr;
+            });
+
+            setMessages((prev) => [
+              ...prev,
+              {
+                type: "alert",
+                text: "SAFETY STOP · Inspection finding flagged",
+              },
+              {
+                type: "agent_text",
+                text: data.text,
+                showLabel: true,
+              },
+              {
+                type: "plan_turn",
+                title: `● WORK ORDER ${data.ticket.code} · ${data.ticket.title}`,
+                badge: `${data.ticket.code} · ${data.ticket.status}`,
+                checklist: data.checklist || [
+                  "Stop Engine Line 2 conveyor immediately",
+                  "Tag out station feeder switch",
+                  "Marcus T. (Maintenance) dispatched with calibrated torque wrench",
+                  "Torque all 6 bracket bolts to 45 Nm per SOP-ENG-14",
+                ],
+                ackText: "Assigned to Marcus T. (Maintenance)",
+                outcomeText: `✓ Stored in Firestore & Cloud Storage as ${data.ticket.code}`,
+                showPills: true,
+              },
+            ]);
+            return;
+          }
+
+          // Informational / verified safe machine part response (no work stoppage)
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: "agent_text",
+              text: data.text,
+              showLabel: true,
+            },
+          ]);
+          return;
+        }
+      } catch (err: any) {
+        setIsTyping(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent_text",
+            text: `⚠️ Network error communicating with Frontline inspection: ${err?.message || "Failed to fetch"}`,
+            showLabel: true,
+          },
+        ]);
+        return;
+      }
+    }
 
     const decision = classifyFrontlineIntent(raw, {
       canApprovePo,
@@ -741,22 +1017,49 @@ export default function FrontlinePage() {
   // Send message in Chat mode
   const sendChatMessage = (rawText: string) => {
     const raw = rawText.trim();
-    if (!raw || isTyping) return;
+    if ((!raw && !chatAttachedImage) || isTyping) return;
+
+    const messageText = raw || (chatAttachedImage ? `Inspecting attached image: ${chatAttachedImage.name}` : "");
+    const currentAttachment = chatAttachedImage;
 
     setChatInput("");
-    setMessages((prev) => [...prev, { type: "user", text: raw }]);
-    executeRoute(raw);
+    setChatAttachedImage(null);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        type: "user",
+        text: messageText,
+        image: currentAttachment
+          ? { name: currentAttachment.name, dataUrl: currentAttachment.dataUrl }
+          : undefined,
+      },
+    ]);
+    executeRoute(messageText, currentAttachment);
   };
 
   // Launch Chat mode from Home composer or chips
   const handleLaunchFromHome = (query: string) => {
     const text = query.trim();
-    if (!text || isTyping) return;
+    if ((!text && !homeAttachedImage) || isTyping) return;
+
+    const messageText = text || (homeAttachedImage ? `Inspecting attached image: ${homeAttachedImage.name}` : "");
+    const currentAttachment = homeAttachedImage;
 
     setHomeInput("");
+    setHomeAttachedImage(null);
     setView("chat");
-    setMessages([{ type: "user", text }]);
-    executeRoute(text);
+
+    setMessages([
+      {
+        type: "user",
+        text: messageText,
+        image: currentAttachment
+          ? { name: currentAttachment.name, dataUrl: currentAttachment.dataUrl }
+          : undefined,
+      },
+    ]);
+    executeRoute(messageText, currentAttachment);
   };
 
   // Launch Chat mode from Ticket cards
@@ -873,7 +1176,7 @@ export default function FrontlinePage() {
   // Clock in from Gate
   const handleClockIn = () => {
     if (!selectedGateId) return;
-    const persona = PERSONAS.find((p) => p.id === selectedGateId);
+    const persona = personas.find((p) => p.id === selectedGateId);
     if (persona) {
       setCurrentPersona(persona);
       try {
@@ -1007,7 +1310,7 @@ export default function FrontlinePage() {
                 <div className="flex items-center gap-3">
                   {selectedGateId ? (
                     (() => {
-                      const sel = PERSONAS.find((p) => p.id === selectedGateId);
+                      const sel = personas.find((p) => p.id === selectedGateId);
                       if (!sel) return <span className="text-[#5C6470]">Select worker</span>;
                       return (
                         <>
@@ -1049,7 +1352,7 @@ export default function FrontlinePage() {
                   role="listbox"
                   className="w-full bg-[#FFFBF0] border-2 border-[#101418] rounded-[12px] shadow-hard overflow-hidden divide-y divide-[#101418]/10 z-40 relative animate-slide-up"
                 >
-                  {PERSONAS.map((p, idx) => {
+                  {personas.map((p, idx) => {
                     const isSelected = selectedGateId === p.id;
                     const hasHigh = p.tickets.some((t) => t.status === "HIGH");
                     const openTickets = p.tickets.length;
@@ -1251,6 +1554,14 @@ export default function FrontlinePage() {
 
             {/* 4. Composer Card */}
             <div className="w-full max-w-3xl bg-[#FFFBF0] border-2 border-[#101418] rounded-[18px] p-4 sm:p-5 shadow-hard flex flex-col justify-between min-h-[130px] space-y-3">
+              <input
+                ref={homeFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleImageSelect(e, "home")}
+              />
+
               <textarea
                 value={homeInput}
                 onChange={(e) => setHomeInput(e.target.value)}
@@ -1260,24 +1571,83 @@ export default function FrontlinePage() {
                     handleLaunchFromHome(homeInput);
                   }
                 }}
-                placeholder="Ask Frontline anything — try 'when was the press oil last changed?'"
+                placeholder="Ask Frontline anything — try 'when was the press oil last changed?' or attach a part photo"
                 rows={2}
                 className="w-full bg-transparent resize-none outline-none font-sans text-[14px] sm:text-[15px] text-[#101418] placeholder:text-[#5C6470]/80 leading-relaxed"
               />
 
+              {homeAttachedImage && (
+                <div className="flex items-center gap-2.5 bg-[#E8EEFC] border border-[#1E43D8]/30 rounded-lg p-2 max-w-sm">
+                  <img
+                    src={homeAttachedImage.dataUrl}
+                    alt={homeAttachedImage.name}
+                    className="w-10 h-10 object-cover rounded border border-[#101418]/20"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-[#101418] truncate">
+                      {homeAttachedImage.name}
+                    </p>
+                    <p className="text-[10px] text-[#5C6470] font-mono">Photo ready for inspection</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setHomeAttachedImage(null)}
+                    className="w-6 h-6 rounded-full hover:bg-black/10 flex items-center justify-center text-xs font-bold text-[#101418] cursor-pointer"
+                    title="Remove photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-2 border-t border-[#101418]/10">
-                <button
-                  type="button"
-                  title="Attach file"
-                  className="w-8 h-8 rounded-full bg-white border-[1.5px] border-[#101418] text-[#101418] flex items-center justify-center font-bold text-sm shadow-xs hover:bg-[#E8EEFC] transition-colors cursor-pointer"
-                >
-                  +
-                </button>
+                <div ref={homeAttachMenuRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsHomeAttachMenuOpen((prev) => !prev)}
+                    title="Attach options"
+                    aria-expanded={isHomeAttachMenuOpen}
+                    className={`w-8 h-8 rounded-full border-[1.5px] border-[#101418] flex items-center justify-center font-bold text-sm shadow-xs transition-all cursor-pointer ${
+                      isHomeAttachMenuOpen
+                        ? "bg-[#101418] text-white"
+                        : "bg-white text-[#101418] hover:bg-[#E8EEFC]"
+                    }`}
+                  >
+                    +
+                  </button>
+
+                  {isHomeAttachMenuOpen && (
+                    <div className="absolute bottom-full mb-2 left-0 z-40 bg-[#FFFBF0] border-2 border-[#101418] rounded-[14px] shadow-hard p-1.5 min-w-[150px] animate-slide-up">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsHomeAttachMenuOpen(false);
+                          homeFileInputRef.current?.click();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-sans font-semibold text-[#101418] hover:bg-[#E8EEFC] active:bg-[#DCE7FB] transition-colors cursor-pointer text-left"
+                      >
+                        <svg
+                          className="w-4 h-4 text-[#101418] flex-shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                        </svg>
+                        <span>Add photos</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 <button
                   type="button"
+                  disabled={(!homeInput.trim() && !homeAttachedImage) || isTyping}
                   onClick={() => handleLaunchFromHome(homeInput)}
-                  className="btn-royal inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-sans text-xs sm:text-[13px] font-semibold cursor-pointer select-none"
+                  className="btn-royal inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-sans text-xs sm:text-[13px] font-semibold cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <span>Ask</span>
                   <span>→</span>
@@ -1364,8 +1734,20 @@ export default function FrontlinePage() {
                 if (msg.type === "user") {
                   return (
                     <div key={index} className="flex justify-end animate-slide-up">
-                      <div className="max-w-[85%] sm:max-w-[75%] bg-[#1E43D8] text-white px-4 py-2.5 rounded-[16px] rounded-br-[4px] font-sans text-[14px] leading-relaxed shadow-sm select-text">
-                        {msg.text}
+                      <div className="max-w-[85%] sm:max-w-[75%] bg-[#1E43D8] text-white px-4 py-2.5 rounded-[16px] rounded-br-[4px] font-sans text-[14px] leading-relaxed shadow-sm select-text flex flex-col gap-2">
+                        {msg.image && (
+                          <div className="rounded-lg overflow-hidden border border-white/20 bg-black/20">
+                            <img
+                              src={msg.image.dataUrl}
+                              alt={msg.image.name}
+                              className="max-h-56 max-w-full object-contain rounded"
+                            />
+                            <div className="px-2 py-1 text-[11px] font-mono text-white/80 bg-black/40 truncate">
+                              📷 {msg.image.name}
+                            </div>
+                          </div>
+                        )}
+                        {msg.text && <div>{msg.text}</div>}
                       </div>
                     </div>
                   );
@@ -1524,6 +1906,38 @@ export default function FrontlinePage() {
                 ))}
               </div>
 
+              <input
+                ref={chatFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleImageSelect(e, "chat")}
+              />
+
+              {chatAttachedImage && (
+                <div className="flex items-center gap-2.5 bg-[#E8EEFC] border border-[#1E43D8]/30 rounded-lg p-2 max-w-sm">
+                  <img
+                    src={chatAttachedImage.dataUrl}
+                    alt={chatAttachedImage.name}
+                    className="w-10 h-10 object-cover rounded border border-[#101418]/20"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-[#101418] truncate">
+                      {chatAttachedImage.name}
+                    </p>
+                    <p className="text-[10px] text-[#5C6470] font-mono">Photo ready for inspection</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setChatAttachedImage(null)}
+                    className="w-6 h-6 rounded-full hover:bg-black/10 flex items-center justify-center text-xs font-bold text-[#101418] cursor-pointer"
+                    title="Remove photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -1531,16 +1945,57 @@ export default function FrontlinePage() {
                 }}
                 className="flex items-center gap-2"
               >
+                <div ref={chatAttachMenuRef} className="relative flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsChatAttachMenuOpen((prev) => !prev)}
+                    title="Attach options"
+                    aria-expanded={isChatAttachMenuOpen}
+                    className={`w-9 h-9 rounded-full border-[1.5px] border-[#101418] flex items-center justify-center font-bold text-base shadow-xs transition-all cursor-pointer flex-shrink-0 ${
+                      isChatAttachMenuOpen
+                        ? "bg-[#101418] text-white"
+                        : "bg-white text-[#101418] hover:bg-[#E8EEFC]"
+                    }`}
+                  >
+                    +
+                  </button>
+
+                  {isChatAttachMenuOpen && (
+                    <div className="absolute bottom-full mb-2 left-0 z-40 bg-[#FFFBF0] border-2 border-[#101418] rounded-[14px] shadow-hard p-1.5 min-w-[150px] animate-slide-up">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsChatAttachMenuOpen(false);
+                          chatFileInputRef.current?.click();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-sans font-semibold text-[#101418] hover:bg-[#E8EEFC] active:bg-[#DCE7FB] transition-colors cursor-pointer text-left"
+                      >
+                        <svg
+                          className="w-4 h-4 text-[#101418] flex-shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                        </svg>
+                        <span>Add photos</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Text Frontline…"
+                  placeholder="Text Frontline or attach a machine photo…"
                   className="flex-1 bg-white border-[1.5px] border-[#101418] rounded-full px-4 py-2 text-[14px] font-sans text-[#101418] placeholder:text-[#5C6470] outline-none focus:border-[#1E43D8] transition-colors shadow-xs"
                 />
                 <button
                   type="submit"
-                  disabled={!chatInput.trim() || isTyping}
+                  disabled={(!chatInput.trim() && !chatAttachedImage) || isTyping}
                   className="w-9 h-9 rounded-full bg-[#1E43D8] text-white border-[1.5px] border-[#101418] shadow-btn hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer flex-shrink-0"
                   aria-label="Send message"
                 >

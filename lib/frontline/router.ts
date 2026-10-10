@@ -163,6 +163,16 @@ function isOperationallyRelevant(q: string): boolean {
     "pump",
     "psi",
     "coolant",
+    "screw",
+    "screws",
+    "fastener",
+    "fasteners",
+    "torx",
+    "hardware",
+    "nut",
+    "washer",
+    "lathe",
+    "gripper",
   ];
 
   return shopFloorTerms.some((term) => q.includes(term));
