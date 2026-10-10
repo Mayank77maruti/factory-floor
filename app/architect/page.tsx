@@ -12,6 +12,7 @@ import { Sidebar } from "../app/components/Sidebar";
 import { UploadState } from "../app/components/UploadState";
 import { RunView } from "../app/components/RunView";
 import { SystemMonitor } from "../components/SystemMonitor";
+import { ActiveRunState, generateRandomStageDurations } from "../app/runState";
 
 export default function ArchitectPage() {
   // Active rail module: defaults to "01-autodraft"
@@ -28,6 +29,7 @@ export default function ArchitectPage() {
 
   // Autodraft inspect state
   const [autodraftIsInspect, setAutodraftIsInspect] = useState<boolean>(false);
+  const [activeRunState, setActiveRunState] = useState<ActiveRunState | null>(null);
 
   // Module reset keys for "+ New run"
   const [bomCheckKey, setBomCheckKey] = useState<number>(0);
@@ -57,23 +59,47 @@ export default function ArchitectPage() {
   const handleStartAutodraftRun = (runId: string, file: string) => {
     setSelectedRunId(runId);
     setCurrentFile(file);
+    setAutodraftIsInspect(false);
     setAutodraftViewState("running");
+    const now = Date.now();
+    const stageDurationsMs = generateRandomStageDurations();
+    setActiveRunState({
+      runId,
+      currentStage: 0,
+      startedAt: now,
+      stageStartedAt: now,
+      status: "running",
+      stageDurationsMs,
+    });
   };
 
   const handleCancelAutodraftRun = () => {
     setAutodraftIsInspect(false);
     setAutodraftViewState("upload");
+    setActiveRunState(null);
   };
 
   const handleNewDrawing = () => {
     setAutodraftIsInspect(false);
+    setActiveRunState(null);
     setAutodraftViewState("upload");
   };
 
   const handleSelectRun = (runId: string) => {
-    setAutodraftIsInspect(false);
     setSelectedRunId(runId);
+    setAutodraftIsInspect(true);
     setAutodraftViewState("running");
+    const now = Date.now();
+    const stageDurationsMs = generateRandomStageDurations();
+    const totalDurationMs = stageDurationsMs.reduce((a, b) => a + b, 0);
+    setActiveRunState({
+      runId,
+      currentStage: 7,
+      startedAt: now - totalDurationMs,
+      stageStartedAt: now - (stageDurationsMs[7] || 1800),
+      status: "done",
+      stageDurationsMs,
+    });
   };
 
   // Handler when any module finishes a run
@@ -146,7 +172,22 @@ export default function ArchitectPage() {
     if (moduleCode === "01-autodraft") {
       setAutodraftIsInspect(isInspectMode);
       if (options?.initialSample || isInspectMode) {
-        handleStartAutodraftRun(options?.runId || "sample-clevis", options?.fileName || "clevis.step");
+        const file = options?.fileName || "clevis.step";
+        const runId = options?.runId || "sample-clevis";
+        setSelectedRunId(runId);
+        setCurrentFile(file);
+        setAutodraftViewState("running");
+        const now = Date.now();
+        const stageDurationsMs = generateRandomStageDurations();
+        const totalDurationMs = stageDurationsMs.reduce((a, b) => a + b, 0);
+        setActiveRunState({
+          runId,
+          currentStage: isInspectMode ? 7 : 0,
+          startedAt: isInspectMode ? now - totalDurationMs : now,
+          stageStartedAt: isInspectMode ? now - (stageDurationsMs[7] || 1800) : now,
+          status: isInspectMode ? "done" : "running",
+          stageDurationsMs,
+        });
       } else {
         handleNewDrawing();
       }
@@ -280,6 +321,8 @@ export default function ArchitectPage() {
                   onNewDrawing={handleNewDrawing}
                   selectedRunId={selectedRunId}
                   onSelectRun={handleSelectRun}
+                  activeRunState={activeRunState}
+                  currentFileName={currentFile}
                 />
                 <div className="flex-1 flex flex-col overflow-hidden bg-[#FFFBF0] relative">
                   {autodraftViewState === "upload" ? (
@@ -291,6 +334,8 @@ export default function ArchitectPage() {
                       onCancel={handleCancelAutodraftRun}
                       onRunComplete={handleRunComplete}
                       isInspect={autodraftIsInspect}
+                      runState={activeRunState}
+                      onUpdateRunState={setActiveRunState}
                     />
                   )}
                 </div>

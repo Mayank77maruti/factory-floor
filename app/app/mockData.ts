@@ -98,14 +98,14 @@ export interface PipelineStage {
 }
 
 export const PIPELINE_STAGES: PipelineStage[] = [
-  { id: 1, name: "Load STEP", nominalDuration: "166ms" },
-  { id: 2, name: "Six views", nominalDuration: "1.6s" },
-  { id: 3, name: "Orientation", nominalDuration: "31.4s" },
-  { id: 4, name: "Feature tree", nominalDuration: "53.2s", agentModel: "gpt-6-astra" },
-  { id: 5, name: "View selection", nominalDuration: "34.5s" },
-  { id: 6, name: "Derived views", nominalDuration: "0ms" },
-  { id: 7, name: "Dimension set", nominalDuration: "3m 54s", agentModel: "gpt-6-midnight" },
-  { id: 8, name: "Drawing sheet", nominalDuration: "10m 9s" },
+  { id: 1, name: "Load STEP", nominalDuration: "2s" },
+  { id: 2, name: "Six views", nominalDuration: "2s" },
+  { id: 3, name: "Orientation", nominalDuration: "2s" },
+  { id: 4, name: "Feature tree", nominalDuration: "2s", agentModel: "gpt-6-astra" },
+  { id: 5, name: "View selection", nominalDuration: "2s" },
+  { id: 6, name: "Derived views", nominalDuration: "2s" },
+  { id: 7, name: "Dimension set", nominalDuration: "2s", agentModel: "gpt-6-midnight" },
+  { id: 8, name: "Drawing sheet", nominalDuration: "2s" },
 ];
 
 export interface FeatureTreeRow {
@@ -215,7 +215,7 @@ export const AGENT_LOG_GROUPS: AgentLogGroup[] = [
   {
     stageId: 1,
     stageName: "Load STEP",
-    duration: "166ms",
+    duration: "2.0s",
     entries: [
       { type: "info", text: "loading clevis.step" },
       { type: "info", text: "114 faces, frame solidworks, bbox 150 × 120 × 88 mm" },
@@ -224,7 +224,7 @@ export const AGENT_LOG_GROUPS: AgentLogGroup[] = [
   {
     stageId: 2,
     stageName: "Six views",
-    duration: "1.6s",
+    duration: "2.0s",
     entries: [
       { type: "info", text: "projecting front, back, right, left, top, bottom..." },
       { type: "status", text: "generated 6 isometric projected wireframes with hidden lines" },
@@ -233,7 +233,7 @@ export const AGENT_LOG_GROUPS: AgentLogGroup[] = [
   {
     stageId: 3,
     stageName: "Orientation",
-    duration: "31.4s",
+    duration: "2.0s",
     entries: [
       { type: "info", text: "asking Gemini whether the part should be turned on the sheet" },
       { type: "tool", turn: "Turn 1 · 1 tool call", toolCallName: "analyze_stability", toolCallArgs: "normal=[0, 0, 1] gravity_vector=[0, -1, 0]", durationMs: "12ms" },
@@ -244,7 +244,7 @@ export const AGENT_LOG_GROUPS: AgentLogGroup[] = [
     stageId: 4,
     stageName: "Feature tree",
     model: "gpt-6-astra",
-    duration: "53.2s",
+    duration: "2.0s",
     entries: [
       { type: "info", text: "running openai gpt-6-astra" },
       { type: "info", text: "Calling gpt-6-astra..." },
@@ -269,7 +269,7 @@ export const AGENT_LOG_GROUPS: AgentLogGroup[] = [
   {
     stageId: 5,
     stageName: "View selection",
-    duration: "34.5s",
+    duration: "2.0s",
     entries: [
       { type: "info", text: "asking Gemini which views the drawing needs" },
       { type: "status", text: "selected front, right, top; sections 0; auxiliary 0; detail 0" },
@@ -279,7 +279,7 @@ export const AGENT_LOG_GROUPS: AgentLogGroup[] = [
   {
     stageId: 6,
     stageName: "Derived views",
-    duration: "0ms",
+    duration: "2.0s",
     entries: [
       { type: "status", text: "classifier evaluated: 0 derived views required" },
       { type: "info", text: "The classifier called for none." },
@@ -289,7 +289,7 @@ export const AGENT_LOG_GROUPS: AgentLogGroup[] = [
     stageId: 7,
     stageName: "Dimension set",
     model: "gpt-6-midnight",
-    duration: "3m 54s",
+    duration: "2.0s",
     entries: [
       { type: "info", text: "running openai gpt-6-midnight" },
       { type: "info", text: "Calling gpt-6-midnight..." },
@@ -301,7 +301,7 @@ export const AGENT_LOG_GROUPS: AgentLogGroup[] = [
   {
     stageId: 8,
     stageName: "Drawing sheet",
-    duration: "10m 9s",
+    duration: "2.0s",
     entries: [
       { type: "info", text: "laying out views: front (Zone C3), top (Zone B3), right (Zone C5)" },
       { type: "info", text: "solving dimension placements (14 linear & leader constraints)" },

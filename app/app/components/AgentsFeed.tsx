@@ -6,9 +6,16 @@ import { AGENT_LOG_GROUPS, AgentLogGroup } from "../mockData";
 interface AgentsFeedProps {
   currentStageId: number;
   isRunning: boolean;
+  liveElapsedSeconds?: number;
+  stageDurationsMs?: number[];
 }
 
-export function AgentsFeed({ currentStageId, isRunning }: AgentsFeedProps) {
+export function AgentsFeed({
+  currentStageId,
+  isRunning,
+  liveElapsedSeconds,
+  stageDurationsMs,
+}: AgentsFeedProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Filter logs visible up to currentStageId
@@ -60,6 +67,7 @@ export function AgentsFeed({ currentStageId, isRunning }: AgentsFeedProps) {
         ) : (
           visibleLogs.map((group) => {
             const isCurrent = group.stageId === currentStageId && isRunning;
+            const isCompleted = group.stageId < currentStageId || (!isRunning && currentStageId >= 8);
 
             return (
               <div
@@ -85,7 +93,19 @@ export function AgentsFeed({ currentStageId, isRunning }: AgentsFeedProps) {
                         {group.model}
                       </span>
                     )}
-                    <span>{group.duration}</span>
+                    {(() => {
+                      const targetMs = stageDurationsMs?.[group.stageId - 1] ?? 1800;
+                      const targetSec = (targetMs / 1000).toFixed(1);
+                      return (
+                        <span>
+                          {isCompleted
+                            ? `${targetSec}s`
+                            : liveElapsedSeconds !== undefined
+                            ? `${Math.min(Number(targetSec), liveElapsedSeconds).toFixed(1)}s`
+                            : "running"}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -102,6 +122,10 @@ export function AgentsFeed({ currentStageId, isRunning }: AgentsFeedProps) {
                     }
 
                     if (entry.type === "status") {
+                      if (!isCompleted) {
+                        return null;
+                      }
+
                       return (
                         <div
                           key={idx}

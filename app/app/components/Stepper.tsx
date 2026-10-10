@@ -9,6 +9,7 @@ interface StepperProps {
   onSelectStage: (stageId: number) => void;
   isRunning: boolean;
   liveElapsedSeconds: number;
+  stageDurationsMs?: number[];
 }
 
 export function Stepper({
@@ -17,6 +18,7 @@ export function Stepper({
   onSelectStage,
   isRunning,
   liveElapsedSeconds,
+  stageDurationsMs,
 }: StepperProps) {
   return (
     <div className="w-full bg-[#FBF6E9] border-b-[1.5px] border-[#101418] px-4 sm:px-6 py-2.5 select-none">
@@ -26,8 +28,8 @@ export function Stepper({
           const isCurrent = step.id === currentStageId && isRunning;
           const isSelected = step.id === activeStageId;
 
-          // Format live timer if current
-          const formattedLiveTime = `${liveElapsedSeconds.toFixed(1)}s`;
+          const stageTargetMs = stageDurationsMs?.[step.id - 1] ?? 1800;
+          const stageTargetSec = (stageTargetMs / 1000).toFixed(1);
 
           return (
             <button
@@ -83,12 +85,20 @@ export function Stepper({
                 >
                   {step.name}
                 </span>
-                <span className="font-mono text-[11px] text-[#101418]/60">
+                <span
+                  className={`font-mono text-[11px] ${
+                    isCurrent
+                      ? "text-[#1E43D8] font-semibold"
+                      : isDone
+                      ? "text-[#101418]/70"
+                      : "text-[#101418]/30"
+                  }`}
+                >
                   {isCurrent
-                    ? formattedLiveTime
+                    ? `${Math.min(Number(stageTargetSec), liveElapsedSeconds).toFixed(1)}s`
                     : isDone
-                    ? step.nominalDuration
-                    : step.nominalDuration}
+                    ? `${stageTargetSec}s`
+                    : `${stageTargetSec}s`}
                 </span>
               </div>
             </button>

@@ -2,14 +2,23 @@
 
 import React, { useEffect, useState } from "react";
 import { RunHistoryItem } from "../mockData";
+import { ActiveRunState, formatSidebarTimestamp } from "../runState";
 
 interface SidebarProps {
   onNewDrawing: () => void;
   selectedRunId: string;
   onSelectRun: (runId: string) => void;
+  activeRunState?: ActiveRunState | null;
+  currentFileName?: string;
 }
 
-export function Sidebar({ onNewDrawing, selectedRunId, onSelectRun }: SidebarProps) {
+export function Sidebar({
+  onNewDrawing,
+  selectedRunId,
+  onSelectRun,
+  activeRunState,
+  currentFileName,
+}: SidebarProps) {
   const [runs, setRuns] = useState<RunHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -47,6 +56,48 @@ export function Sidebar({ onNewDrawing, selectedRunId, onSelectRun }: SidebarPro
       clearInterval(interval);
     };
   }, []);
+
+  // Synchronize active run row with the single source of truth activeRunState
+  let displayRuns = runs;
+  if (activeRunState) {
+    const activeStageNum = activeRunState.currentStage + 1;
+    const stagesCompletedText =
+      activeRunState.status === "running"
+        ? `${activeStageNum}/8 stages`
+        : activeRunState.status === "done"
+        ? "8/8 stages"
+        : `${activeStageNum}/8 stages (Cancelled)`;
+
+    const runStatus: RunHistoryItem["status"] =
+      activeRunState.status === "running"
+        ? "running"
+        : activeRunState.status === "done"
+        ? "success"
+        : "warning";
+
+    const exists = runs.some((r) => r.id === activeRunState.runId);
+    if (exists) {
+      displayRuns = runs.map((r) => {
+        if (r.id === activeRunState.runId) {
+          return {
+            ...r,
+            stagesCompleted: stagesCompletedText,
+            status: runStatus,
+          };
+        }
+        return r;
+      });
+    } else {
+      const newActiveItem: RunHistoryItem = {
+        id: activeRunState.runId,
+        name: (currentFileName || "clevis.step").replace(/\.[^/.]+$/, ""),
+        timestamp: formatSidebarTimestamp(activeRunState.startedAt),
+        stagesCompleted: stagesCompletedText,
+        status: runStatus,
+      };
+      displayRuns = [newActiveItem, ...runs];
+    }
+  }
   return (
     <aside className="w-[264px] bg-[#FBF6E9] border-r-[1.5px] border-[#101418] flex flex-col shrink-0 select-none overflow-hidden h-full">
       {/* Top Action Button */}
@@ -64,21 +115,47 @@ export function Sidebar({ onNewDrawing, selectedRunId, onSelectRun }: SidebarPro
 
       {/* Runs Section Label */}
       <div className="px-3 pt-3.5 pb-1">
-        <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[#101418]/70 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 bg-[#FF6B2C] border border-[#101418] inline-block shrink-0" />
-          <span>RUNS</span>
+        <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[#101418]/70 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-[#FF6B2C] border border-[#101418] inline-block shrink-0" />
+            <span>RUNS</span>
+          </div>
+          {isLoading && (
+            <span className="flex items-center gap-1 text-[9px] text-[#101418]/50 font-mono lowercase">
+              <span className="w-2 h-2 rounded-full border border-[#101418]/40 border-t-transparent animate-spin inline-block" />
+              <span>loading</span>
+            </span>
+          )}
         </div>
       </div>
 
       {/* Runs List */}
       <div className="flex-1 overflow-y-auto px-2 space-y-1 text-left pt-1">
-        {isLoading ? (
-          <div className="p-2 space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="w-full h-11 rounded-lg bg-[#101418]/[0.06] animate-pulse" />
+        {isLoading && displayRuns.length === 0 ? (
+          <div className="p-1 space-y-1.5">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="w-full p-2 rounded-lg bg-white/40 border border-[#101418]/10 flex items-start gap-2.5 animate-pulse"
+              >
+                {/* Status Dot Skeleton */}
+                <div className="w-3.5 h-3.5 rounded-full bg-[#101418]/15 mt-0.5 shrink-0" />
+
+                {/* Text lines Skeleton */}
+                <div className="flex-1 space-y-1.5 py-0.5">
+                  <div
+                    className="h-3 bg-[#101418]/20 rounded"
+                    style={{ width: i % 2 === 0 ? "65%" : "80%" }}
+                  />
+                  <div
+                    className="h-2.5 bg-[#101418]/10 rounded"
+                    style={{ width: i % 2 === 0 ? "85%" : "55%" }}
+                  />
+                </div>
+              </div>
             ))}
           </div>
-        ) : runs.length === 0 ? (
+        ) : displayRuns.length === 0 ? (
           <div className="px-3 py-6 text-center">
             <div className="font-mono text-[11px] font-semibold text-[#101418]/50 uppercase tracking-wider">
               No runs recorded
@@ -88,7 +165,7 @@ export function Sidebar({ onNewDrawing, selectedRunId, onSelectRun }: SidebarPro
             </div>
           </div>
         ) : (
-          runs.map((run) => {
+          displayRuns.map((run) => {
             const isSelected = run.id === selectedRunId;
             return (
               <button

@@ -24,9 +24,50 @@ import {
   ProjectRunRecord,
   DEFAULT_MOCK_PROJECTS as INITIAL_PROJECTS,
 } from "../../../lib/types/projects";
+import { getDrawingVariant } from "../../app/drawingVariants";
 
 export type { ProjectItem, ProjectRunRecord };
 export { INITIAL_PROJECTS };
+
+/**
+ * Resolves the display findings for a project card / project detail header.
+ * If the project has an Autodraft run or is an Autodraft CAD project, derives
+ * findings directly from the deterministic drawing variant so it always agrees
+ * with the drawing sheet's issue-count chip.
+ */
+export function getProjectFindings(project: ProjectItem): {
+  text: string;
+  type: "issues" | "clear" | "neutral";
+} {
+  const autodraftRun = project.runsList?.find((r) => r.moduleCode === "01-autodraft");
+  const stepFile =
+    autodraftRun?.fileName ||
+    (project.sourceFileName && /\.(step|stp)$/i.test(project.sourceFileName)
+      ? project.sourceFileName
+      : null) ||
+    (project.id === "proj-clevis" ? "clevis.step" : null);
+
+  if (stepFile && (project.runs.autodraft > 0 || autodraftRun)) {
+    const variant = getDrawingVariant(stepFile);
+    return {
+      text: `${variant.issues.length} LAYOUT ISSUES`,
+      type: "issues",
+    };
+  }
+
+  if (project.findings === "DRAWING GENERATED") {
+    const variant = getDrawingVariant(stepFile || "clevis.step");
+    return {
+      text: `${variant.issues.length} LAYOUT ISSUES`,
+      type: "issues",
+    };
+  }
+
+  return {
+    text: project.findings || "NO RUNS YET",
+    type: project.findingsType || "neutral",
+  };
+}
 
 export interface ProjectModuleNavOptions {
   initialSample?: boolean;
@@ -290,17 +331,22 @@ export function ProjectsView({ onOpenModule, onBackToModules, initialProjectId }
                     {selectedProject.status}
                   </span>
 
-                  <span
-                    className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded uppercase tracking-wider border ${
-                      selectedProject.findingsType === "issues"
-                        ? "bg-[#D92D20]/10 text-[#D92D20] border-[#D92D20]/30"
-                        : selectedProject.findingsType === "clear"
-                        ? "bg-[#1E9E6A]/10 text-[#1E9E6A] border-[#1E9E6A]/30"
-                        : "bg-[#101418]/5 text-[#101418]/60 border-[#101418]/15"
-                    }`}
-                  >
-                    {selectedProject.findings}
-                  </span>
+                  {(() => {
+                    const detailFindings = getProjectFindings(selectedProject);
+                    return (
+                      <span
+                        className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded uppercase tracking-wider border ${
+                          detailFindings.type === "issues"
+                            ? "bg-[#D92D20]/10 text-[#D92D20] border-[#D92D20]/30"
+                            : detailFindings.type === "clear"
+                            ? "bg-[#1E9E6A]/10 text-[#1E9E6A] border-[#1E9E6A]/30"
+                            : "bg-[#101418]/5 text-[#101418]/60 border-[#101418]/15"
+                        }`}
+                      >
+                        {detailFindings.text}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -366,55 +412,65 @@ export function ProjectsView({ onOpenModule, onBackToModules, initialProjectId }
                         </td>
                       </tr>
                     ) : (
-                      selectedProject.runsList.map((run, idx) => (
-                        <tr
-                          key={idx}
-                          onClick={() => {
-                            onOpenModule(run.moduleCode, {
-                              initialSample: !!run.isDemo,
-                              initialStep: 3,
-                              fileName: run.fileName,
-                              runId: run.runId,
-                              projectId: selectedProject.id,
-                              projectName: selectedProject.name,
-                              isInspect: true,
-                            });
-                          }}
-                          className="transition-colors hover:bg-[#E8EEFC]/60 cursor-pointer group"
-                        >
-                          <td className="py-3 px-4 font-mono font-bold text-[#1E43D8]">
-                            {run.moduleName}
-                          </td>
-                          <td className="py-3 px-4 font-sans font-medium text-[#101418]">
-                            {run.runTitle}
-                          </td>
-                          <td className="py-3 px-4 font-mono text-[#101418]/70">
-                            {run.fileName}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
-                                run.resultType === "error"
-                                  ? "bg-[#D92D20]/10 text-[#D92D20] border-[#D92D20]/30"
-                                  : run.resultType === "warn"
-                                  ? "bg-[#FFC53D]/25 text-[#101418] border-[#FFC53D]/50"
-                                  : "bg-[#1E9E6A]/10 text-[#1E9E6A] border-[#1E9E6A]/30"
-                              }`}
-                            >
-                              {run.result}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 font-mono text-[#101418]/60">
-                            {run.date}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span className="font-mono text-[11px] font-bold text-[#1E43D8] group-hover:translate-x-0.5 inline-flex items-center gap-1 transition-transform">
-                              <span>Inspect</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </span>
-                          </td>
-                        </tr>
-                      ))
+                      selectedProject.runsList.map((run, idx) => {
+                        let displayResult = run.result;
+                        let displayResultType = run.resultType;
+                        if (run.moduleCode === "01-autodraft") {
+                          const variant = getDrawingVariant(run.fileName);
+                          displayResult = `${variant.issues.length} ISSUES`;
+                          displayResultType = "warn";
+                        }
+
+                        return (
+                          <tr
+                            key={idx}
+                            onClick={() => {
+                              onOpenModule(run.moduleCode, {
+                                initialSample: !!run.isDemo,
+                                initialStep: 3,
+                                fileName: run.fileName,
+                                runId: run.runId,
+                                projectId: selectedProject.id,
+                                projectName: selectedProject.name,
+                                isInspect: true,
+                              });
+                            }}
+                            className="transition-colors hover:bg-[#E8EEFC]/60 cursor-pointer group"
+                          >
+                            <td className="py-3 px-4 font-mono font-bold text-[#1E43D8]">
+                              {run.moduleName}
+                            </td>
+                            <td className="py-3 px-4 font-sans font-medium text-[#101418]">
+                              {run.runTitle}
+                            </td>
+                            <td className="py-3 px-4 font-mono text-[#101418]/70">
+                              {run.fileName}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
+                                  displayResultType === "error"
+                                    ? "bg-[#D92D20]/10 text-[#D92D20] border-[#D92D20]/30"
+                                    : displayResultType === "warn"
+                                    ? "bg-[#FFC53D]/25 text-[#101418] border-[#FFC53D]/50"
+                                    : "bg-[#1E9E6A]/10 text-[#1E9E6A] border-[#1E9E6A]/30"
+                                }`}
+                              >
+                                {displayResult}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-[#101418]/60">
+                              {run.date}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <span className="font-mono text-[11px] font-bold text-[#1E43D8] group-hover:translate-x-0.5 inline-flex items-center gap-1 transition-transform">
+                                <span>Inspect</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -911,17 +967,22 @@ function ProjectCard({
 
           {/* Findings Chip */}
           <div>
-            <span
-              className={`font-mono text-[10.5px] font-bold px-2 py-0.5 rounded border inline-block ${
-                project.findingsType === "issues"
-                  ? "bg-[#D92D20]/10 text-[#D92D20] border-[#D92D20]/30"
-                  : project.findingsType === "clear"
-                  ? "bg-[#1E9E6A]/10 text-[#1E9E6A] border-[#1E9E6A]/30"
-                  : "bg-[#101418]/5 text-[#101418]/50 border-[#101418]/15"
-              }`}
-            >
-              {project.findings}
-            </span>
+            {(() => {
+              const cardFindings = getProjectFindings(project);
+              return (
+                <span
+                  className={`font-mono text-[10.5px] font-bold px-2 py-0.5 rounded border inline-block ${
+                    cardFindings.type === "issues"
+                      ? "bg-[#D92D20]/10 text-[#D92D20] border-[#D92D20]/30"
+                      : cardFindings.type === "clear"
+                      ? "bg-[#1E9E6A]/10 text-[#1E9E6A] border-[#1E9E6A]/30"
+                      : "bg-[#101418]/5 text-[#101418]/50 border-[#101418]/15"
+                  }`}
+                >
+                  {cardFindings.text}
+                </span>
+              );
+            })()}
           </div>
         </div>
 

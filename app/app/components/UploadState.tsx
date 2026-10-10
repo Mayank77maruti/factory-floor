@@ -170,17 +170,20 @@ export function UploadState({ onStartRun }: UploadStateProps) {
                   .step or .stp · one part per run
                 </div>
 
-                {/* Sample Quick-Select Hint */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSelectSample();
-                  }}
-                  className="mt-3 font-mono text-[11px] text-[#1E43D8] hover:underline cursor-pointer"
-                >
-                  Or click to test with sample "clevis.step" (290 KB)
-                </button>
+                {/* Sample Quick-Select Chips */}
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 z-10">
+                  <span className="font-mono text-[11px] text-[#101418]/60 mr-1">Demo samples:</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectSample();
+                    }}
+                    className="font-mono text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#FFFBF0] border-[1.5px] border-[#101418] text-[#1E43D8] hover:bg-[#E8EEFC] hover:border-[#1E43D8] transition-colors cursor-pointer shadow-2xs"
+                  >
+                    clevis.step (sample)
+                  </button>
+                </div>
 
                 {/* Disabled Start Run Button (Bottom-Right) */}
                 <div className="w-full flex justify-end mt-4">
@@ -198,7 +201,7 @@ export function UploadState({ onStartRun }: UploadStateProps) {
             ) : (
               /* Attached File Chip View */
               <div className="w-full flex flex-col items-center">
-                <div className="flex items-center gap-2 bg-[#FFFBF0] border-[1.5px] border-[#101418] px-4 py-2 rounded-lg shadow-hard-xs text-xs font-mono font-medium text-[#101418] mb-4">
+                <div className="flex items-center gap-2 bg-[#FFFBF0] border-[1.5px] border-[#101418] px-4 py-2 rounded-lg shadow-hard-xs text-xs font-mono font-medium text-[#101418] mb-3">
                   <svg className="w-4 h-4 text-[#1E43D8] stroke-[2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
