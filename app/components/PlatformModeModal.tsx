@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -15,240 +15,205 @@ export function PlatformModeModal({
   onClose,
   buttonRef,
 }: PlatformModeOverlayProps) {
-  const [showCards, setShowCards] = useState(false);
-  const [animateLines, setAnimateLines] = useState(false);
-  const [coords, setCoords] = useState<{
-    startX: number;
-    startY: number;
-    targetLeftX: number;
-    targetRightX: number;
-    targetY: number;
-  }>({
-    startX: 800,
-    startY: 48,
-    targetLeftX: 360,
-    targetRightX: 720,
-    targetY: 260,
-  });
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  const leftCardRef = useRef<HTMLDivElement | null>(null);
-  const rightCardRef = useRef<HTMLDivElement | null>(null);
-
-  // Measure button and card positions dynamically
-  const updatePositions = () => {
-    let startX = window.innerWidth / 2 + 150;
-    let startY = 46;
-
-    if (buttonRef?.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      startX = rect.left + rect.width / 2;
-      startY = rect.bottom;
-    }
-
-    let targetLeftX = window.innerWidth / 2 - 180;
-    let targetRightX = window.innerWidth / 2 + 180;
-    let targetY = 270;
-
-    if (leftCardRef.current && rightCardRef.current) {
-      const leftRect = leftCardRef.current.getBoundingClientRect();
-      const rightRect = rightCardRef.current.getBoundingClientRect();
-      targetLeftX = leftRect.left + leftRect.width / 2;
-      targetRightX = rightRect.left + rightRect.width / 2;
-      targetY = leftRect.top;
-    }
-
-    setCoords({
-      startX,
-      startY,
-      targetLeftX,
-      targetRightX,
-      targetY,
-    });
-  };
-
+  // Focus management and escape key listener
   useEffect(() => {
-    if (isOpen) {
-      updatePositions();
-      window.addEventListener("resize", updatePositions);
+    if (!isOpen) return;
 
-      // Re-measure once DOM renders the cards container
-      const measureTimer = setTimeout(() => {
-        updatePositions();
-      }, 30);
+    // Focus close button on modal open for immediate keyboard accessibility
+    const timer = setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 50);
 
-      // 1. Immediately trigger the orange lines animation
-      const lineTimer = setTimeout(() => {
-        setAnimateLines(true);
-      }, 60);
-
-      // 2. Once the lines swoop down from the top navbar (~420ms), pop the 2 mode cards
-      const cardsTimer = setTimeout(() => {
-        setShowCards(true);
-      }, 420);
-
-      return () => {
-        window.removeEventListener("resize", updatePositions);
-        clearTimeout(measureTimer);
-        clearTimeout(lineTimer);
-        clearTimeout(cardsTimer);
-      };
-    } else {
-      setShowCards(false);
-      setAnimateLines(false);
-    }
-  }, [isOpen]);
-
-  // Handle escape key
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape") {
         onClose();
+        buttonRef?.current?.focus();
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose, buttonRef]);
 
   if (!isOpen) return null;
 
-  // Natural curving cubic-bezier paths from the navbar button down to the two cards
-  const leftDx = coords.targetLeftX - coords.startX;
-  const leftDy = coords.targetY - coords.startY;
-  const pathLeft = `M ${coords.startX} ${coords.startY} C ${coords.startX + leftDx * 0.15} ${coords.startY + leftDy * 0.65}, ${coords.targetLeftX} ${coords.startY + leftDy * 0.35}, ${coords.targetLeftX} ${coords.targetY}`;
-
-  const rightDx = coords.targetRightX - coords.startX;
-  const rightDy = coords.targetY - coords.startY;
-  const pathRight = `M ${coords.startX} ${coords.startY} C ${coords.startX + rightDx * 0.2} ${coords.startY + rightDy * 0.65}, ${coords.targetRightX} ${coords.startY + rightDy * 0.35}, ${coords.targetRightX} ${coords.targetY}`;
-
   return (
     <div
-      className="fixed inset-0 z-50 overflow-hidden bg-[#101418]/50 backdrop-blur-md transition-opacity duration-300 animate-in fade-in select-none"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-[#101418]/65 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200 motion-reduce:animate-none select-none"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="platform-mode-title"
     >
-      {/* Full-screen SVG for dynamic arrow paths directly from the existing navbar CTA */}
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none z-10"
-        style={{ width: "100vw", height: "100vh" }}
-      >
-        <defs>
-          <marker
-            id="navbar-orange-arrowhead-left"
-            markerWidth="11"
-            markerHeight="11"
-            refX="7.5"
-            refY="3.5"
-            orient="auto"
-          >
-            <polygon points="0 0.5, 8.5 3.5, 0 6.5" fill="#ff5500" />
-          </marker>
-          <marker
-            id="navbar-orange-arrowhead-right"
-            markerWidth="11"
-            markerHeight="11"
-            refX="7.5"
-            refY="3.5"
-            orient="auto"
-          >
-            <polygon points="0 0.5, 8.5 3.5, 0 6.5" fill="#ff5500" />
-          </marker>
-        </defs>
-
-        {/* Left swooping curve from navbar button to Architect Mode card */}
-        <path
-          d={pathLeft}
-          stroke="#ff5500"
-          strokeWidth="3.2"
-          strokeLinecap="round"
-          strokeDasharray="700"
-          strokeDashoffset={animateLines ? "0" : "700"}
-          markerEnd={animateLines ? "url(#navbar-orange-arrowhead-left)" : undefined}
-          className="transition-all duration-500 ease-out fill-none"
-        />
-
-        {/* Right swooping curve from navbar button to Frontline Mode card */}
-        <path
-          d={pathRight}
-          stroke="#ff5500"
-          strokeWidth="3.2"
-          strokeLinecap="round"
-          strokeDasharray="700"
-          strokeDashoffset={animateLines ? "0" : "700"}
-          markerEnd={animateLines ? "url(#navbar-orange-arrowhead-right)" : undefined}
-          className="transition-all duration-500 ease-out fill-none"
-        />
-      </svg>
-
-      {/* Floating Close Button in top right */}
-      <div className="absolute top-4 right-6 sm:right-10 z-30">
-        <button
-          onClick={onClose}
-          aria-label="Close modal"
-          className="w-8 h-8 rounded-full bg-[#FFFBF0] border-2 border-[#101418] text-[#101418] hover:bg-[#FF5500] hover:text-white transition-colors flex items-center justify-center font-bold text-sm shadow-[2px_2px_0_#101418] cursor-pointer"
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* Mode Cards Container - Positioned nicely in the upper-mid area below the navbar */}
+      {/* Centered Modal Card Container */}
       <div
-        className="relative w-full h-full flex flex-col items-center justify-start pt-32 sm:pt-40 md:pt-44 p-4 z-20"
+        className="relative w-full max-w-4xl my-auto bg-[#F6EFDB] rounded-xl sm:rounded-2xl border-2 border-[#101418] shadow-[8px_8px_0_#101418] sm:shadow-[10px_10px_0_#101418] p-4 sm:p-6 md:p-8 overflow-hidden animate-in zoom-in-95 duration-200 motion-reduce:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          className={`grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10 w-full max-w-[720px] transition-all duration-500 ease-out transform ${
-            showCards
-              ? "opacity-100 scale-100 translate-y-0"
-              : "opacity-0 scale-95 translate-y-4 pointer-events-none"
-          }`}
-        >
-          {/* Card 1: Architect Mode -> /architect */}
-          <div ref={leftCardRef}>
-            <Link
-              href="/architect"
-              className="group block relative bg-[#FFFBF0] rounded-xl border-2 border-[#101418] shadow-[6px_6px_0_#101418] hover:shadow-[8px_8px_0_#101418] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all overflow-hidden cursor-pointer"
-            >
-              {/* Illustration */}
-              <div className="relative w-full aspect-[4/3] bg-[#EAE2CE] flex items-center justify-center p-3 sm:p-4 overflow-hidden border-b-2 border-[#101418]">
-                <Image
-                  src="/modes/architect-mode.png"
-                  alt="Architect Mode"
-                  fill
-                  className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
-                  priority
-                />
-              </div>
-
-              {/* Orange Mode Banner Button */}
-              <div className="bg-[#ff5500] group-hover:bg-[#e04a00] text-white py-3 sm:py-3.5 px-4 text-center font-bold tracking-wide text-sm sm:text-base flex items-center justify-center gap-2 transition-colors">
-                <span>Architect Mode</span>
-                <span className="text-white/90 text-sm group-hover:translate-x-1 transition-transform">→</span>
-              </div>
-            </Link>
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between pb-4 border-b border-[#101418]/15">
+          {/* Eyebrow Status Badge */}
+          <div className="inline-flex items-center gap-2 bg-[#FFFBF0] border border-[#101418]/25 px-2.5 py-1 rounded-[3px] text-[11px] font-mono tracking-wider text-[#101418] shadow-[1px_1px_0_#101418]/20">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#124ead] opacity-75 motion-reduce:hidden" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#124ead]" />
+            </span>
+            <span className="font-bold">MANUFY</span>
+            <span className="text-[#101418]/30">//</span>
+            <span className="text-[#5c6470] font-semibold">WORKSPACE SELECTOR</span>
           </div>
 
-          {/* Card 2: Frontline Mode -> /frontline */}
-          <div ref={rightCardRef}>
-            <Link
-              href="/frontline"
-              className="group block relative bg-[#FFFBF0] rounded-xl border-2 border-[#101418] shadow-[6px_6px_0_#101418] hover:shadow-[8px_8px_0_#101418] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all overflow-hidden cursor-pointer"
-            >
-              {/* Illustration */}
-              <div className="relative w-full aspect-[4/3] bg-[#EAE2CE] flex items-center justify-center p-3 sm:p-4 overflow-hidden border-b-2 border-[#101418]">
-                <Image
-                  src="/modes/frontline-mode.png"
-                  alt="Frontline Mode"
-                  fill
-                  className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
-                  priority
-                />
+          {/* Close Button */}
+          <button
+            ref={closeButtonRef}
+            onClick={onClose}
+            aria-label="Close mode selector"
+            title="Close (Esc)"
+            className="w-8 h-8 rounded-full bg-[#FFFBF0] border-2 border-[#101418] text-[#101418] hover:bg-[#ff5500] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5500] focus-visible:ring-offset-2 transition-colors flex items-center justify-center font-bold text-sm shadow-[2px_2px_0_#101418] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Title */}
+        <div className="pt-3 pb-3 sm:pb-5">
+          <h2
+            id="platform-mode-title"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#101418]"
+          >
+            Choose Workspace Mode
+          </h2>
+        </div>
+
+        {/* 2-Column Mode Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+          {/* Card 1: Architect Mode */}
+          <Link
+            href="/architect"
+            onClick={onClose}
+            className="group flex flex-col bg-[#FFFBF0] rounded-xl border-2 border-[#101418] shadow-[5px_5px_0_#101418] hover:shadow-[7px_7px_0_#101418] hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:shadow-[7px_7px_0_#101418] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#124ead] focus-visible:ring-offset-2 transition-all duration-200 overflow-hidden cursor-pointer"
+          >
+            {/* Visual Frame */}
+            <div className="relative w-full h-44 sm:h-48 md:h-52 bg-[#EAE2CE] border-b-2 border-[#101418] flex items-center justify-center p-3 overflow-hidden">
+              <div className="absolute top-2.5 left-2.5 z-10 bg-[#124ead] text-white text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-[2px] tracking-wider uppercase shadow-[2px_2px_0_#101418]">
+                MODE 01 // ARCHITECT
+              </div>
+              <Image
+                src="/modes/architect-mode.png"
+                alt="Architect Mode interface preview"
+                fill
+                sizes="(max-width: 768px) 100vw, 420px"
+                className="object-contain p-3 group-hover:scale-105 transition-transform duration-300 motion-reduce:transform-none"
+                priority
+              />
+            </div>
+
+            {/* Content Area */}
+            <div className="p-4 sm:p-5 flex flex-col flex-1 justify-between gap-4">
+              <div className="space-y-2">
+                <span className="inline-block font-mono text-[11px] font-bold tracking-wider text-[#124ead] uppercase">
+                  CAD AUTOMATION &amp; METROLOGY
+                </span>
+                <h3 className="text-xl sm:text-2xl font-bold text-[#101418] tracking-tight group-hover:text-[#124ead] transition-colors">
+                  Architect Mode
+                </h3>
+
+                {/* Capability Tags */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <span className="text-[10px] sm:text-[11px] font-mono font-medium px-2 py-0.5 bg-[#E8EEFC] text-[#124ead] border border-[#124ead]/20 rounded">
+                    ASME Y14.5
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-mono font-medium px-2 py-0.5 bg-[#E8EEFC] text-[#124ead] border border-[#124ead]/20 rounded">
+                    GD&amp;T Extraction
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-mono font-medium px-2 py-0.5 bg-[#E8EEFC] text-[#124ead] border border-[#124ead]/20 rounded">
+                    Revision Diffs
+                  </span>
+                </div>
               </div>
 
-              {/* Orange Mode Banner Button */}
-              <div className="bg-[#ff5500] group-hover:bg-[#e04a00] text-white py-3 sm:py-3.5 px-4 text-center font-bold tracking-wide text-sm sm:text-base flex items-center justify-center gap-2 transition-colors">
-                <span>Frontline Mode</span>
-                <span className="text-white/90 text-sm group-hover:translate-x-1 transition-transform">→</span>
+              {/* Action Button */}
+              <div className="mt-2 bg-[#ff5500] group-hover:bg-[#e04a00] text-white py-2.5 sm:py-3 px-4 rounded-lg border-2 border-[#101418] shadow-[3px_3px_0_#101418] group-hover:shadow-[4px_4px_0_#101418] transition-all flex items-center justify-between font-bold text-sm tracking-wide">
+                <span>Launch Architect Mode</span>
+                <span className="text-white text-base group-hover:translate-x-1 transition-transform motion-reduce:transform-none">
+                  →
+                </span>
               </div>
-            </Link>
+            </div>
+          </Link>
+
+          {/* Card 2: Frontline Mode */}
+          <Link
+            href="/frontline"
+            onClick={onClose}
+            className="group flex flex-col bg-[#FFFBF0] rounded-xl border-2 border-[#101418] shadow-[5px_5px_0_#101418] hover:shadow-[7px_7px_0_#101418] hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:shadow-[7px_7px_0_#101418] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5500] focus-visible:ring-offset-2 transition-all duration-200 overflow-hidden cursor-pointer"
+          >
+            {/* Visual Frame */}
+            <div className="relative w-full h-44 sm:h-48 md:h-52 bg-[#EAE2CE] border-b-2 border-[#101418] flex items-center justify-center p-3 overflow-hidden">
+              <div className="absolute top-2.5 left-2.5 z-10 bg-[#ff5500] text-white text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-[2px] tracking-wider uppercase shadow-[2px_2px_0_#101418]">
+                MODE 02 // FRONTLINE
+              </div>
+              <Image
+                src="/modes/frontline-mode.png"
+                alt="Frontline Mode interface preview"
+                fill
+                sizes="(max-width: 768px) 100vw, 420px"
+                className="object-contain p-3 group-hover:scale-105 transition-transform duration-300 motion-reduce:transform-none"
+                priority
+              />
+            </div>
+
+            {/* Content Area */}
+            <div className="p-4 sm:p-5 flex flex-col flex-1 justify-between gap-4">
+              <div className="space-y-2">
+                <span className="inline-block font-mono text-[11px] font-bold tracking-wider text-[#ff5500] uppercase">
+                  SHOP FLOOR OPERATIONS &amp; COPILOT
+                </span>
+                <h3 className="text-xl sm:text-2xl font-bold text-[#101418] tracking-tight group-hover:text-[#ff5500] transition-colors">
+                  Frontline Mode
+                </h3>
+
+                {/* Capability Tags */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <span className="text-[10px] sm:text-[11px] font-mono font-medium px-2 py-0.5 bg-[#FFF3C4] text-[#8a3800] border border-[#ff5500]/25 rounded">
+                    Telemetry Stream
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-mono font-medium px-2 py-0.5 bg-[#FFF3C4] text-[#8a3800] border border-[#ff5500]/25 rounded">
+                    Shift Logs &amp; WOs
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-mono font-medium px-2 py-0.5 bg-[#FFF3C4] text-[#8a3800] border border-[#ff5500]/25 rounded">
+                    Shop-Floor AI
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="mt-2 bg-[#ff5500] group-hover:bg-[#e04a00] text-white py-2.5 sm:py-3 px-4 rounded-lg border-2 border-[#101418] shadow-[3px_3px_0_#101418] group-hover:shadow-[4px_4px_0_#101418] transition-all flex items-center justify-between font-bold text-sm tracking-wide">
+                <span>Launch Frontline Mode</span>
+                <span className="text-white text-base group-hover:translate-x-1 transition-transform motion-reduce:transform-none">
+                  →
+                </span>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Modal Window Footer */}
+        <div className="flex items-center justify-between pt-3.5 mt-4 border-t border-[#101418]/15 text-[11px] font-mono text-[#5c6470]">
+          <div className="flex items-center gap-1.5">
+            <span>DISMISS:</span>
+            <kbd className="px-1.5 py-0.5 bg-[#FFFBF0] border border-[#101418]/30 rounded text-[#101418] font-bold text-[10px] shadow-[1px_1px_0_#101418]/20">
+              ESC
+            </kbd>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+            <span className="font-semibold text-[#101418]">SYSTEM READY</span>
           </div>
         </div>
       </div>
