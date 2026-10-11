@@ -103,7 +103,7 @@ export function PlatformModeModal({
                 MODE 01 // ENGINEERING
               </div>
               <Image
-                src="/images/feat-01-autodraft.png"
+                src="/images/ezgif-frame-051.png"
                 alt="Engineering Mode interface preview"
                 fill
                 sizes="(max-width: 768px) 100vw, 420px"
@@ -159,7 +159,7 @@ export function PlatformModeModal({
                 MODE 02 // FRONTLINE
               </div>
               <Image
-                src="/images/feat-03-frontline-mode.png"
+                src="/images/ezgif-frame-218.png"
                 alt="Frontline Mode interface preview"
                 fill
                 sizes="(max-width: 768px) 100vw, 420px"
