@@ -29,6 +29,10 @@ function FullScreenCanvas({
   const needsRedrawRef = useRef<boolean>(true);
   const rafIdRef = useRef<number | null>(null);
 
+  // Interactive mouse parallax tracking references (fluid camera inertia)
+  const mouseTargetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const mouseCurrentRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   const onCriticalProgressRef = useRef(onCriticalProgress);
   onCriticalProgressRef.current = onCriticalProgress;
   const onCriticalCompleteRef = useRef(onCriticalComplete);
@@ -66,8 +70,8 @@ function FullScreenCanvas({
     return null;
   };
 
-  // Draw frame on canvas with aspect ratio cover & retina DPR capped at 2
-  const drawFrame = (frameIndex: number) => {
+  // Draw frame on canvas with aspect ratio cover & retina DPR capped at 2 + smooth parallax bleed
+  const drawFrame = (frameIndex: number, shiftX = 0, shiftY = 0) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d", { alpha: false });
@@ -93,6 +97,10 @@ function FullScreenCanvas({
     ctx.save();
     ctx.scale(dpr, dpr);
 
+    // Bleed margin ensures mouse parallax movement never reveals empty boundaries
+    const BLEED_X = 24;
+    const BLEED_Y = 12;
+
     // Dynamically align canvas framing with the bottom of the hero paper banner
     // so the architect's head and workstation sit right underneath the banner dividing line
     const heroBanner = typeof document !== "undefined" ? document.getElementById("hero-headline-banner") : null;
@@ -101,27 +109,30 @@ function FullScreenCanvas({
     const headImgY = 466; // Top apex of architect's head/hair in 1080p source image
     const desiredHeadY = bannerH + 6; // Sit cleanly 6px below bottom paper border
 
-    let scale = Math.max(width / img.naturalWidth, height / img.naturalHeight);
+    let scale = Math.max(
+      (width + BLEED_X * 2) / img.naturalWidth,
+      (height + BLEED_Y * 2) / img.naturalHeight,
+      (desiredHeadY + BLEED_Y) / headImgY
+    );
 
-    if (desiredHeadY / headImgY > scale) {
-      scale = desiredHeadY / headImgY;
+    let renderW = Math.ceil(scale * img.naturalWidth);
+    let renderH = Math.ceil(scale * img.naturalHeight);
+
+    let baseOffsetX = Math.floor((width - renderW) / 2);
+    let baseOffsetY = desiredHeadY - scale * headImgY;
+
+    if (baseOffsetY + renderH < height + BLEED_Y) {
+      baseOffsetY = height + BLEED_Y - renderH;
     }
 
-    let offsetY = desiredHeadY - scale * headImgY;
-
-    if (offsetY > 0) offsetY = 0;
-    if (offsetY + scale * img.naturalHeight < height) {
-      offsetY = height - scale * img.naturalHeight;
-    }
-
-    const renderW = Math.ceil(scale * img.naturalWidth);
-    const renderH = Math.ceil(scale * img.naturalHeight);
-    const offsetX = Math.floor((width - renderW) / 2);
+    // Apply subtle interactive mouse parallax offset (moves with mouse direction)
+    const finalOffsetX = baseOffsetX + shiftX;
+    const finalOffsetY = baseOffsetY + shiftY;
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    ctx.drawImage(img, offsetX, offsetY, renderW, renderH);
+    ctx.drawImage(img, finalOffsetX, finalOffsetY, renderW, renderH);
     ctx.restore();
   };
 
@@ -264,12 +275,32 @@ function FullScreenCanvas({
       needsRedrawRef.current = true;
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", handleResize, { passive: true });
-    handleScroll();
-
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const lerpFactor = prefersReducedMotion ? 1.0 : 0.3;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (prefersReducedMotion) return;
+      // Normalized coordinates from -1 to 1:
+      const nx = (e.clientX / (window.innerWidth || 1)) * 2 - 1;
+      const ny = (e.clientY / (window.innerHeight || 1)) * 2 - 1;
+
+      // Mouse moves right -> frame shifts right (positive X)
+      // Subtle elegant drift: max ~18px horizontal, ~6px vertical
+      mouseTargetRef.current = {
+        x: nx * 18,
+        y: ny * 6,
+      };
+    };
+
+    const handleMouseLeave = () => {
+      mouseTargetRef.current = { x: 0, y: 0 };
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize, { passive: true });
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener("mouseleave", handleMouseLeave);
+    handleScroll();
 
     const renderLoop = () => {
       const diff = targetFrameRef.current - currentFrameRef.current;
@@ -287,8 +318,25 @@ function FullScreenCanvas({
 
       const frameToDraw = Math.max(1, Math.min(totalFrames, Math.round(currentFrameRef.current)));
 
-      if (frameToDraw !== lastDrawnFrameRef.current || needsRedrawRef.current) {
-        drawFrame(frameToDraw);
+      // Smooth mouse parallax interpolation with physical damping
+      const mouseDiffX = mouseTargetRef.current.x - mouseCurrentRef.current.x;
+      const mouseDiffY = mouseTargetRef.current.y - mouseCurrentRef.current.y;
+      const isMouseMoving = Math.abs(mouseDiffX) > 0.02 || Math.abs(mouseDiffY) > 0.02;
+
+      if (isMouseMoving) {
+        mouseCurrentRef.current.x += mouseDiffX * 0.08;
+        mouseCurrentRef.current.y += mouseDiffY * 0.08;
+      } else {
+        mouseCurrentRef.current.x = mouseTargetRef.current.x;
+        mouseCurrentRef.current.y = mouseTargetRef.current.y;
+      }
+
+      if (
+        frameToDraw !== lastDrawnFrameRef.current ||
+        isMouseMoving ||
+        needsRedrawRef.current
+      ) {
+        drawFrame(frameToDraw, mouseCurrentRef.current.x, mouseCurrentRef.current.y);
         lastDrawnFrameRef.current = frameToDraw;
         needsRedrawRef.current = false;
       }
@@ -301,6 +349,8 @@ function FullScreenCanvas({
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseleave", handleMouseLeave);
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
       }
