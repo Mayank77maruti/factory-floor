@@ -175,28 +175,11 @@ export function FeatureRail({ activeModuleId, onSelectModule }: FeatureRailProps
         </div>
 
         {/* =====================================================================
-            FOOTER BLOCK: Review credits + User Profile
+            FOOTER BLOCK: User Profile
         ===================================================================== */}
-        <div className="p-3 border-t-2 border-[#101418] bg-[#FBF6E9] space-y-2.5 shrink-0">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-wider text-[#101418]/70">
-            <span>REVIEW CREDITS</span>
-            <span className="text-[#101418]">9 / 10 LEFT</span>
-          </div>
-
-          {/* Segmented bar: 9 filled with sun #FFC53D, 1 empty */}
-          <div className="flex items-center gap-1 h-2 w-full">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div
-                key={i}
-                className={`flex-1 h-full rounded-[2px] border border-[#101418]/30 ${
-                  i < 9 ? "bg-[#FFC53D]" : "bg-white/70"
-                }`}
-              />
-            ))}
-          </div>
-
+        <div className="p-3 border-t-2 border-[#101418] bg-[#FBF6E9] shrink-0">
           {/* User Profile */}
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-[#101418] text-white font-sans font-bold text-[11px] flex items-center justify-center shrink-0">
               d
             </div>
