@@ -33,6 +33,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${architectsDaughter.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="preload" as="image" href="/images/ezgif-frame-001.webp" type="image/webp" />
+      </head>
       <body className="min-h-full flex flex-col bg-[#f4ebd7]">{children}</body>
     </html>
   );

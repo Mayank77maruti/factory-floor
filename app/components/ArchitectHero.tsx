@@ -3,12 +3,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PlatformModeModal from "./PlatformModeModal";
-
+import BlueprintLoader from "./BlueprintLoader";
 
 // =========================================================================
-// 1. FULL-SCREEN SCROLL CANVAS COMPONENT (Internal & Self-Contained)
+// 1. FULL-SCREEN SCROLL CANVAS COMPONENT (Asset-Gated & WebP-Accelerated)
 // =========================================================================
-function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
+function FullScreenCanvas({
+  totalFrames = 300,
+  isRevealed = false,
+  onCriticalProgress,
+  onCriticalComplete,
+}: {
+  totalFrames?: number;
+  isRevealed?: boolean;
+  onCriticalProgress?: (loadedCount: number, total: number) => void;
+  onCriticalComplete?: () => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Animation & Frame tracking references
@@ -18,14 +28,22 @@ function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
   const needsRedrawRef = useRef<boolean>(true);
   const rafIdRef = useRef<number | null>(null);
 
+  const onCriticalProgressRef = useRef(onCriticalProgress);
+  onCriticalProgressRef.current = onCriticalProgress;
+  const onCriticalCompleteRef = useRef(onCriticalComplete);
+  onCriticalCompleteRef.current = onCriticalComplete;
+
   // Frame Cache
   const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   const loadedFlagsRef = useRef<boolean[]>([]);
-  const [isReady, setIsReady] = useState<boolean>(false);
 
-  const getFrameUrl = (index: number) => {
+  // Serve .webp first, fall back to .png on error
+  const getFrameUrls = (index: number) => {
     const padded = index.toString().padStart(3, "0");
-    return `/images/ezgif-frame-${padded}.png`;
+    return {
+      webp: `/images/ezgif-frame-${padded}.webp`,
+      png: `/images/ezgif-frame-${padded}.png`,
+    };
   };
 
   // Find closest loaded image if target frame is still decoding
@@ -47,7 +65,7 @@ function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
     return null;
   };
 
-  // Draw frame on canvas with aspect ratio cover & retina DPR
+  // Draw frame on canvas with aspect ratio cover & retina DPR capped at 2
   const drawFrame = (frameIndex: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -100,7 +118,7 @@ function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
     ctx.restore();
   };
 
-  // Progressive preloader
+  // Progressive asset-gated preloader (WebP first with PNG fallback)
   useEffect(() => {
     imagesRef.current = new Array(totalFrames + 1).fill(null);
     loadedFlagsRef.current = new Array(totalFrames + 1).fill(false);
@@ -109,45 +127,73 @@ function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
 
     const loadSingleFrame = (idx: number): Promise<HTMLImageElement> => {
       return new Promise((resolve) => {
-        if (imagesRef.current[idx]) {
+        if (imagesRef.current[idx] && loadedFlagsRef.current[idx]) {
           resolve(imagesRef.current[idx]!);
           return;
         }
 
+        const { webp, png } = getFrameUrls(idx);
         const img = new Image();
-        img.src = getFrameUrl(idx);
-        img.onload = () => {
+
+        const handleSuccess = () => {
           if (!isMounted) return;
           imagesRef.current[idx] = img;
           loadedFlagsRef.current[idx] = true;
 
           if (idx === 1) {
-            setIsReady(true);
             drawFrame(1);
             needsRedrawRef.current = true;
           }
           resolve(img);
         };
-        img.onerror = () => {
-          resolve(img);
+
+        img.onload = () => {
+          if ("decode" in img) {
+            img.decode().then(handleSuccess).catch(handleSuccess);
+          } else {
+            handleSuccess();
+          }
         };
+
+        img.onerror = () => {
+          // Serve .webp first, fall back to .png on error
+          if (img.src.includes(".webp")) {
+            img.src = png;
+          } else {
+            resolve(img);
+          }
+        };
+
+        img.src = webp;
       });
     };
 
-    // Priority 1: Load Frame 1 immediately
-    loadSingleFrame(1).then(() => {
-      if (isMounted) {
-        drawFrame(1);
-        needsRedrawRef.current = true;
-      }
-    });
+    const preloadSequence = async () => {
+      const CRITICAL_TOTAL = 25;
+      let criticalLoaded = 0;
 
-    // Priority 2: Preload next 25 frames for immediate scrolling responsiveness
-    const preloadAll = async () => {
-      for (let i = 2; i <= Math.min(25, totalFrames); i++) {
-        if (!isMounted) return;
-        await loadSingleFrame(i);
+      // Priority 1: Load Frame 1 immediately
+      await loadSingleFrame(1);
+      if (!isMounted) return;
+      drawFrame(1);
+      criticalLoaded++;
+      onCriticalProgressRef.current?.(criticalLoaded, CRITICAL_TOTAL);
+
+      // Priority 2: Preload next 24 critical frames (frames 2 to 25)
+      const criticalPromises: Promise<any>[] = [];
+      for (let i = 2; i <= Math.min(CRITICAL_TOTAL, totalFrames); i++) {
+        criticalPromises.push(
+          loadSingleFrame(i).then(() => {
+            if (!isMounted) return;
+            criticalLoaded++;
+            onCriticalProgressRef.current?.(criticalLoaded, CRITICAL_TOTAL);
+          })
+        );
       }
+
+      await Promise.all(criticalPromises);
+      if (!isMounted) return;
+      onCriticalCompleteRef.current?.();
 
       // Priority 3: Milestones across timeline (every 10th frame)
       for (let i = 30; i <= totalFrames; i += 10) {
@@ -168,15 +214,21 @@ function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
       }
     };
 
-    preloadAll();
+    preloadSequence();
 
     return () => {
       isMounted = false;
     };
   }, [totalFrames]);
 
-  // Scroll listener & continuous Lerp animation loop
+  // Scroll listener & continuous Lerp animation loop (GATED ON isRevealed)
   useEffect(() => {
+    // While the loader is up: do NOT start the scroll-driven rAF sequence loop!
+    if (!isRevealed) return;
+
+    needsRedrawRef.current = true;
+    drawFrame(1);
+
     const handleScroll = () => {
       const scrollTrack = document.getElementById("scroll-story-track");
       let progress = 0;
@@ -239,7 +291,7 @@ function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
         cancelAnimationFrame(rafIdRef.current);
       }
     };
-  }, [totalFrames]);
+  }, [totalFrames, isRevealed]);
 
   return (
     <div
@@ -252,16 +304,6 @@ function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
         className="w-full h-full block object-cover"
         style={{ width: "100%", height: "100%" }}
       />
-
-      {/* Loading state indicator before frame 1 paints */}
-      {!isReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#f4ebd7] z-10 pointer-events-none">
-          <div className="flex items-center gap-2 text-xs font-mono text-[#5c6470]">
-            <span className="w-2 h-2 rounded-full bg-[#124ead] animate-ping" />
-            <span>INITIALIZING CINEMATIC SEQUENCE...</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -280,10 +322,64 @@ export function ArchitectHero({
   const [isEditingBrand, setIsEditingBrand] = useState(false);
   const [isPastHero, setIsPastHero] = useState(false);
   const [isModeModalOpen, setIsModeModalOpen] = useState(false);
+
+  // Asset-gated loading screen state
+  const [criticalCount, setCriticalCount] = useState(0);
+  const [criticalComplete, setCriticalComplete] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
+  const [isWiping, setIsWiping] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [isLoaderDone, setIsLoaderDone] = useState(false);
+
   const exploreBtnRef = useRef<HTMLButtonElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const coordXRef = useRef<HTMLSpanElement | null>(null);
   const coordYRef = useRef<HTMLSpanElement | null>(null);
+
+  // 1. Detect font readiness
+  useEffect(() => {
+    if (typeof document !== "undefined" && "fonts" in document) {
+      document.fonts.ready
+        .then(() => setFontsReady(true))
+        .catch(() => setFontsReady(true));
+    } else {
+      setFontsReady(true);
+    }
+  }, []);
+
+  // 2. Safety timeout of 12s: on timeout, reveal anyway so it can never hang on a stalled asset
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsWiping(true);
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 3. When critical batch (1..25) is decoded and fonts are ready, initiate wipe
+  useEffect(() => {
+    if (criticalComplete && fontsReady && !isWiping && !isRevealed) {
+      setIsWiping(true);
+    }
+  }, [criticalComplete, fontsReady, isWiping, isRevealed]);
+
+  // 4. While loader is up: lock page scroll (overflow: hidden)
+  useEffect(() => {
+    if (!isRevealed) {
+      const origHtmlOverflow = document.documentElement.style.overflow;
+      const origBodyOverflow = document.body.style.overflow;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.documentElement.style.overflow = origHtmlOverflow;
+        document.body.style.overflow = origBodyOverflow;
+      };
+    }
+  }, [isRevealed]);
+
+  const handleWipeComplete = () => {
+    setIsRevealed(true);
+    setIsLoaderDone(true);
+  };
 
   useEffect(() => {
     const isTouchDevice = () =>
@@ -371,8 +467,25 @@ export function ArchitectHero({
         </div>
       </div>
 
+      {/* 0. FULL-PAGE BLUEPRINT ASSET-GATED LOADER */}
+      {!isLoaderDone && (
+        <BlueprintLoader
+          progress={Math.round((criticalCount / 25) * 100)}
+          loadedCount={criticalCount}
+          totalCritical={25}
+          fontsReady={fontsReady}
+          isWiping={isWiping}
+          onWipeComplete={handleWipeComplete}
+        />
+      )}
+
       {/* 1. FIXED FULL-SCREEN HTML5 CANVAS (100vw x 100vh) */}
-      <FullScreenCanvas totalFrames={300} />
+      <FullScreenCanvas
+        totalFrames={300}
+        isRevealed={isRevealed}
+        onCriticalProgress={(loaded) => setCriticalCount(loaded)}
+        onCriticalComplete={() => setCriticalComplete(true)}
+      />
 
       {/* 2. FIXED TOP MARGINALIA & FLOATING NAVBAR (Z-40) */}
       <header className="fixed top-0 left-0 w-full z-40 pointer-events-none px-4 sm:px-8 md:px-12 pt-3">
@@ -382,7 +495,9 @@ export function ArchitectHero({
           <div className="w-20 sm:w-28 hidden sm:block pointer-events-none select-none" />
 
           {/* Center: Floating Technical Dock Navbar */}
-          <nav className="absolute left-1/2 -translate-x-1/2 top-0 flex items-center bg-[#fbf9f4] border border-[#292929]/30 rounded-[3px] py-1 px-2.5 sm:px-3 shadow-[0_2px_8px_rgba(0,0,0,0.06)] pointer-events-auto max-w-[94vw]">
+          <nav className={`absolute left-1/2 -translate-x-1/2 top-0 flex items-center bg-[#fbf9f4] border border-[#292929]/30 rounded-[3px] py-1 px-2.5 sm:px-3 shadow-[0_2px_8px_rgba(0,0,0,0.06)] pointer-events-auto max-w-[94vw] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] delay-200 ${
+            isRevealed ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+          }`}>
             {/* Blueprint Geometric Logo + Brand Name */}
             <div className="flex items-center gap-2 pr-3 sm:pr-4 border-r border-[#292929]/20">
               <svg
@@ -464,8 +579,8 @@ export function ArchitectHero({
 
           {/* Top-Right: Contact Label (fades when past hero) */}
           <div
-            className={`text-[11px] sm:text-xs font-handwriting text-[#4a5260] tracking-wider select-none uppercase pt-1 text-right pointer-events-auto transition-opacity duration-300 ${
-              isPastHero ? "opacity-0 pointer-events-none" : "opacity-100"
+            className={`text-[11px] sm:text-xs font-handwriting text-[#4a5260] tracking-wider select-none uppercase pt-1 text-right pointer-events-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] delay-300 ${
+              isPastHero ? "opacity-0 pointer-events-none" : isRevealed ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
             }`}
           >
             BUILT FOR THE FACTORY FLOOR
@@ -475,8 +590,8 @@ export function ArchitectHero({
 
       {/* 3. FIXED BOTTOM-RIGHT MICROCOPY (Z-40) */}
       <div
-        className={`fixed bottom-3 sm:bottom-4 right-3 sm:right-6 z-40 flex items-center gap-1.5 sm:gap-2 bg-[#024ab4]/85 px-2.5 py-1 rounded-[2px] backdrop-blur-[2px] pointer-events-none select-none transition-opacity duration-300 ${
-          isPastHero ? "opacity-0 pointer-events-none" : "opacity-100"
+        className={`fixed bottom-3 sm:bottom-4 right-3 sm:right-6 z-40 flex items-center gap-1.5 sm:gap-2 bg-[#024ab4]/85 px-2.5 py-1 rounded-[2px] backdrop-blur-[2px] pointer-events-none select-none transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] delay-500 ${
+          isPastHero ? "opacity-0 pointer-events-none" : isRevealed ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
         }`}
       >
         <span className="text-[10px] sm:text-[11px] md:text-[12px] font-sans text-white/95 tracking-normal font-normal drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
@@ -500,7 +615,9 @@ export function ArchitectHero({
           <div className="relative w-full max-w-5xl text-center">
 
             {/* Left Sketched Annotation: "INDUSTRIAL INTELLIGENCE" */}
-            <div className="absolute -top-6 sm:-top-8 left-2 sm:left-4 md:-left-12 lg:-left-20 transform -rotate-[5deg] select-none pointer-events-none z-20">
+            <div className={`absolute -top-6 sm:-top-8 left-2 sm:left-4 md:-left-12 lg:-left-20 transform -rotate-[5deg] select-none pointer-events-none z-20 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] delay-500 ${
+              isRevealed ? "opacity-100 scale-100" : "opacity-0 scale-90"
+            }`}>
               <div className="relative inline-block px-2 sm:px-2.5 py-0.5">
                 <svg
                   className="absolute inset-0 w-full h-full pointer-events-none"
@@ -525,7 +642,9 @@ export function ArchitectHero({
             </div>
 
             {/* Right Sketched Annotation: "POWERED BY AI" */}
-            <div className="absolute top-1/2 translate-y-1 sm:translate-y-2 right-1 sm:right-2 md:-right-10 lg:-right-20 transform rotate-[2deg] select-none pointer-events-none z-20 flex items-center gap-1 sm:gap-1.5">
+            <div className={`absolute top-1/2 translate-y-1 sm:translate-y-2 right-1 sm:right-2 md:-right-10 lg:-right-20 transform rotate-[2deg] select-none pointer-events-none z-20 flex items-center gap-1 sm:gap-1.5 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] delay-700 ${
+              isRevealed ? "opacity-100 scale-100" : "opacity-0 scale-90"
+            }`}>
               <svg className="w-8 sm:w-12 h-4 text-[#5c6470] flex-shrink-0" viewBox="0 0 48 16" fill="none" stroke="currentColor">
                 <path d="M45,8 C35,7 20,8 6,8" strokeWidth="1.3" strokeLinecap="round" />
                 <path d="M14,3 L5,8 L14,13" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -539,9 +658,16 @@ export function ArchitectHero({
 
             {/* The Massive Two-Line Headline */}
             <h1 className="text-[2.6rem] sm:text-6xl md:text-7xl lg:text-[5.4rem] xl:text-[6.2rem] font-bold tracking-[-0.035em] text-[#292929] leading-[0.98] sm:leading-[0.96] select-text">
-              Industrial knowledge,
-              <br />
-              made intelligent.
+              <span className={`block transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] delay-150 ${
+                isRevealed ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              }`}>
+                Industrial knowledge,
+              </span>
+              <span className={`block transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] delay-350 ${
+                isRevealed ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              }`}>
+                made intelligent.
+              </span>
             </h1>
           </div>
         </section>

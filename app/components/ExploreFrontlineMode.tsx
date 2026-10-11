@@ -658,14 +658,28 @@ export function ExploreFrontlineMode() {
             {/* Ambient Ground Shadow Under Her Boots */}
             <div className="absolute -bottom-2 w-52 sm:w-64 lg:w-72 h-7 bg-[#101418]/25 rounded-full blur-md pointer-events-none" />
 
-            {/* Engineer Girl Figure (Transparent PNG) */}
+            {/* Engineer Girl Figure (Responsive WebP with PNG fallback & lazy loading) */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/frontline/frontline-operator.png"
-              alt="Industrial Engineer with Tablet standing in the center"
-              className="h-[52vh] sm:h-[58vh] md:h-[64vh] lg:h-[70vh] max-h-[620px] xl:max-h-[680px] w-auto object-contain filter drop-shadow-[0_12px_24px_rgba(16,20,24,0.22)] select-none pointer-events-none"
-              draggable={false}
-            />
+            <picture>
+              <source
+                type="image/webp"
+                srcSet="/frontline/frontline-operator-480w.webp 480w, /frontline/frontline-operator-768w.webp 768w, /frontline/frontline-operator.webp 1024w"
+                sizes="(max-width: 640px) 480px, (max-width: 1024px) 768px, 1024px"
+              />
+              <source
+                type="image/png"
+                srcSet="/frontline/frontline-operator-480w.png 480w, /frontline/frontline-operator-768w.png 768w, /frontline/frontline-operator.png 1024w"
+                sizes="(max-width: 640px) 480px, (max-width: 1024px) 768px, 1024px"
+              />
+              <img
+                src="/frontline/frontline-operator.png"
+                alt="Industrial Engineer with Tablet standing in the center"
+                loading="lazy"
+                decoding="async"
+                className="h-[52vh] sm:h-[58vh] md:h-[64vh] lg:h-[70vh] max-h-[620px] xl:max-h-[680px] w-auto object-contain filter drop-shadow-[0_12px_24px_rgba(16,20,24,0.22)] select-none pointer-events-none"
+                draggable={false}
+              />
+            </picture>
 
             {/* Anchored Identity Badge */}
             <div className="relative -mt-5 z-40 bg-[#FFFBF0]/95 border-[1.5px] border-[#101418] rounded-[6px] px-3.5 sm:px-4 py-1.5 sm:py-2 shadow-[3px_3px_0_#101418] backdrop-blur-[2px] flex items-center gap-2.5 font-mono text-[9.5px] sm:text-[10.5px]">
