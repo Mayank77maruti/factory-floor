@@ -178,7 +178,7 @@ export function ExploreFrontlineMode() {
         {/* =================================================================== */}
         {/* EDITORIAL HEADLINE                                                  */}
         {/* =================================================================== */}
-        <div className="relative w-full max-w-5xl mx-auto text-center z-30 pt-4 sm:pt-6 px-4">
+        <div className="relative w-full max-w-5xl mx-auto text-center z-30 pt-16 sm:pt-20 lg:pt-22 pb-2 px-4">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.6rem] font-bold tracking-tight text-[#101418] leading-[1.08] transition-all duration-500">
             {headlinePhase === "intro" ? (
               <>

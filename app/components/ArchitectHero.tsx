@@ -462,8 +462,12 @@ export function ArchitectHero({
             </div>
           </nav>
 
-          {/* Top-Right: Contact Label */}
-          <div className="text-[11px] sm:text-xs font-handwriting text-[#4a5260] tracking-wider select-none uppercase pt-1 text-right pointer-events-auto">
+          {/* Top-Right: Contact Label (fades when past hero) */}
+          <div
+            className={`text-[11px] sm:text-xs font-handwriting text-[#4a5260] tracking-wider select-none uppercase pt-1 text-right pointer-events-auto transition-opacity duration-300 ${
+              isPastHero ? "opacity-0 pointer-events-none" : "opacity-100"
+            }`}
+          >
             BUILT FOR THE FACTORY FLOOR
           </div>
         </div>
