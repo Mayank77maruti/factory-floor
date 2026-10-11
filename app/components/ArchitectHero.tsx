@@ -281,6 +281,60 @@ export function ArchitectHero({
   const [isPastHero, setIsPastHero] = useState(false);
   const [isModeModalOpen, setIsModeModalOpen] = useState(false);
   const exploreBtnRef = useRef<HTMLButtonElement | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const coordXRef = useRef<HTMLSpanElement | null>(null);
+  const coordYRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    const isTouchDevice = () =>
+      window.matchMedia &&
+      window.matchMedia("(pointer: coarse)").matches &&
+      !window.matchMedia("(pointer: fine)").matches;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!tooltipRef.current || isTouchDevice()) return;
+
+      const target = e.target as HTMLElement | null;
+      const gridEl = target?.closest(".bg-drafting-grid") as HTMLElement | null;
+
+      if (!gridEl) {
+        tooltipRef.current.style.opacity = "0";
+        return;
+      }
+
+      const rect = gridEl.getBoundingClientRect();
+      const relX = Math.max(0, e.clientX - rect.left);
+      const relY = Math.max(0, e.clientY - rect.top);
+      // Convert CSS px to engineering mm at standard 96 DPI (1px = 0.2645833 mm)
+      const MM_PER_PX = 0.2645833;
+      const gridX = (relX * MM_PER_PX).toFixed(2);
+      const gridY = (relY * MM_PER_PX).toFixed(2);
+
+      if (coordXRef.current) coordXRef.current.textContent = gridX;
+      if (coordYRef.current) coordYRef.current.textContent = gridY;
+
+      // Keep tooltip visible and prevent overflow near viewport edges
+      const offsetX = e.clientX + 14 > window.innerWidth - 80 ? e.clientX - 72 : e.clientX + 14;
+      const offsetY = e.clientY + 14 > window.innerHeight - 50 ? e.clientY - 42 : e.clientY + 14;
+
+      tooltipRef.current.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
+      tooltipRef.current.style.opacity = "1";
+    };
+
+    const handleMouseLeave = () => {
+      if (tooltipRef.current) {
+        tooltipRef.current.style.opacity = "0";
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, []);
 
   useEffect(() => {
     const checkScroll = () => {
@@ -298,6 +352,25 @@ export function ArchitectHero({
   return (
     <div className="relative w-full min-h-screen bg-[#f4ebd7] text-[#292929] selection:bg-[#124ead]/20 selection:text-[#124ead] overflow-x-hidden">
       
+      {/* Dynamic Cursor Tip Technical Drafting Coordinates (Active over paper grid) */}
+      <div
+        ref={tooltipRef}
+        aria-hidden="true"
+        className="fixed top-0 left-0 pointer-events-none z-50 opacity-0 transition-opacity duration-100 ease-out select-none will-change-transform"
+        style={{ transform: "translate3d(-9999px, -9999px, 0)" }}
+      >
+        <div className="bg-[#f4ebd7]/95 backdrop-blur-[2px] border border-[#292929]/25 px-1.5 py-0.5 rounded-[2px] shadow-xs text-[10px] sm:text-[11px] font-mono text-[#5c6470] tracking-tight leading-[1.25]">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[#3a3f47]">X</span>
+            <span ref={coordXRef}>127.65</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[#3a3f47]">Y</span>
+            <span ref={coordYRef}>264.80</span>
+          </div>
+        </div>
+      </div>
+
       {/* 1. FIXED FULL-SCREEN HTML5 CANVAS (100vw x 100vh) */}
       <FullScreenCanvas totalFrames={300} />
 
@@ -305,17 +378,8 @@ export function ArchitectHero({
       <header className="fixed top-0 left-0 w-full z-40 pointer-events-none px-4 sm:px-8 md:px-12 pt-3">
         <div className="w-full flex items-start justify-between relative">
           
-          {/* Top-Left: Technical Drafting Coordinates */}
-          <div className="text-[11px] sm:text-xs font-mono text-[#5c6470] tracking-tight leading-[1.3] select-none pt-1 pointer-events-auto">
-            <div className="flex gap-2">
-              <span className="font-semibold text-[#3a3f47]">X</span>
-              <span>127.65</span>
-            </div>
-            <div className="flex gap-2">
-              <span className="font-semibold text-[#3a3f47]">Y</span>
-              <span>264.80</span>
-            </div>
-          </div>
+          {/* Top-Left Spacer (balances layout across header) */}
+          <div className="w-20 sm:w-28 hidden sm:block pointer-events-none select-none" />
 
           {/* Center: Floating Technical Dock Navbar */}
           <nav className="absolute left-1/2 -translate-x-1/2 top-0 flex items-center bg-[#fbf9f4] border border-[#292929]/30 rounded-[3px] py-1 px-2.5 sm:px-3 shadow-[0_2px_8px_rgba(0,0,0,0.06)] pointer-events-auto max-w-[94vw]">
