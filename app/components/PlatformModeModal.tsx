@@ -84,11 +84,8 @@ export function PlatformModeModal({
             id="platform-mode-title"
             className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#101418]"
           >
-            Engineering Mode / Frontline Mode
+            Choose Workspace Mode
           </h2>
-          <p className="text-xs sm:text-sm font-mono text-[#5c6470] mt-1">
-            Engineering Mode vs Frontline Mode
-          </p>
         </div>
 
         {/* 2-Column Mode Cards Grid */}
@@ -101,16 +98,16 @@ export function PlatformModeModal({
             className="group flex flex-col bg-[#FFFBF0] rounded-xl border-2 border-[#101418] shadow-[5px_5px_0_#101418] hover:shadow-[7px_7px_0_#101418] hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:shadow-[7px_7px_0_#101418] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#124ead] focus-visible:ring-offset-2 transition-all duration-200 overflow-hidden cursor-pointer"
           >
             {/* Visual Frame */}
-            <div className="relative w-full h-44 sm:h-48 md:h-52 bg-[#EAE2CE] border-b-2 border-[#101418] flex items-center justify-center p-3 overflow-hidden">
+            <div className="relative w-full h-44 sm:h-48 md:h-52 bg-[#0c2340] border-b-2 border-[#101418] overflow-hidden">
               <div className="absolute top-2.5 left-2.5 z-10 bg-[#124ead] text-white text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-[2px] tracking-wider uppercase shadow-[2px_2px_0_#101418]">
                 MODE 01 // ENGINEERING
               </div>
               <Image
-                src="/modes/architect-mode.png"
+                src="/images/feat-01-autodraft.png"
                 alt="Engineering Mode interface preview"
                 fill
                 sizes="(max-width: 768px) 100vw, 420px"
-                className="object-contain p-3 group-hover:scale-105 transition-transform duration-300 motion-reduce:transform-none"
+                className="object-cover group-hover:scale-105 transition-transform duration-300 motion-reduce:transform-none"
                 priority
               />
             </div>
@@ -157,16 +154,16 @@ export function PlatformModeModal({
             className="group flex flex-col bg-[#FFFBF0] rounded-xl border-2 border-[#101418] shadow-[5px_5px_0_#101418] hover:shadow-[7px_7px_0_#101418] hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:shadow-[7px_7px_0_#101418] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5500] focus-visible:ring-offset-2 transition-all duration-200 overflow-hidden cursor-pointer"
           >
             {/* Visual Frame */}
-            <div className="relative w-full h-44 sm:h-48 md:h-52 bg-[#EAE2CE] border-b-2 border-[#101418] flex items-center justify-center p-3 overflow-hidden">
+            <div className="relative w-full h-44 sm:h-48 md:h-52 bg-[#0c2340] border-b-2 border-[#101418] overflow-hidden">
               <div className="absolute top-2.5 left-2.5 z-10 bg-[#ff5500] text-white text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-[2px] tracking-wider uppercase shadow-[2px_2px_0_#101418]">
                 MODE 02 // FRONTLINE
               </div>
               <Image
-                src="/modes/frontline-mode.png"
+                src="/images/feat-03-frontline-mode.png"
                 alt="Frontline Mode interface preview"
                 fill
                 sizes="(max-width: 768px) 100vw, 420px"
-                className="object-contain p-3 group-hover:scale-105 transition-transform duration-300 motion-reduce:transform-none"
+                className="object-cover group-hover:scale-105 transition-transform duration-300 motion-reduce:transform-none"
                 priority
               />
             </div>
