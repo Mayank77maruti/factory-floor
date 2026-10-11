@@ -11,9 +11,9 @@ export interface ScrollSequenceCanvasProps {
 }
 
 export function ScrollSequenceCanvas({
-  totalFrames = 183,
-  frameDir = "/frames",
-  framePrefix = "frame-",
+  totalFrames = 300,
+  frameDir = "/images",
+  framePrefix = "ezgif-frame-",
   className = "",
   children,
 }: ScrollSequenceCanvasProps) {
@@ -35,10 +35,10 @@ export function ScrollSequenceCanvas({
   const [, setLoadCount] = useState<number>(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
 
-  // Format frame URL: e.g. /frames/frame-001.jpg
+  // Format frame URL: e.g. /images/ezgif-frame-001.png
   const getFrameUrl = (index: number) => {
     const padded = index.toString().padStart(3, "0");
-    return `${frameDir}/${framePrefix}${padded}.jpg`;
+    return `${frameDir}/${framePrefix}${padded}.png`;
   };
 
   // Find closest loaded frame if exact target frame is still downloading

@@ -8,7 +8,7 @@ import PlatformModeModal from "./PlatformModeModal";
 // =========================================================================
 // 1. FULL-SCREEN SCROLL CANVAS COMPONENT (Internal & Self-Contained)
 // =========================================================================
-function FullScreenCanvas({ totalFrames = 183 }: { totalFrames?: number }) {
+function FullScreenCanvas({ totalFrames = 300 }: { totalFrames?: number }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Animation & Frame tracking references
@@ -25,7 +25,7 @@ function FullScreenCanvas({ totalFrames = 183 }: { totalFrames?: number }) {
 
   const getFrameUrl = (index: number) => {
     const padded = index.toString().padStart(3, "0");
-    return `/frames/frame-${padded}.jpg`;
+    return `/images/ezgif-frame-${padded}.png`;
   };
 
   // Find closest loaded image if target frame is still decoding
@@ -299,7 +299,7 @@ export function ArchitectHero({
     <div className="relative w-full min-h-screen bg-[#f4ebd7] text-[#292929] selection:bg-[#124ead]/20 selection:text-[#124ead] overflow-x-hidden">
       
       {/* 1. FIXED FULL-SCREEN HTML5 CANVAS (100vw x 100vh) */}
-      <FullScreenCanvas totalFrames={183} />
+      <FullScreenCanvas totalFrames={300} />
 
       {/* 2. FIXED TOP MARGINALIA & FLOATING NAVBAR (Z-40) */}
       <header className="fixed top-0 left-0 w-full z-40 pointer-events-none px-4 sm:px-8 md:px-12 pt-3">
