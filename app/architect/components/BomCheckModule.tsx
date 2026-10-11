@@ -394,7 +394,7 @@ export function BomCheckModule({
               Does the BOM match the drawing?
             </h1>
             <p className="font-sans text-[14px] sm:text-[15px] text-[#3C4356] leading-relaxed max-w-xl mx-auto">
-              Upload the drawing set and the overall BOM. Manufy reconciles every line —
+              Upload the drawing set and the overall BOM. Astraea reconciles every line —
               quantities, descriptions, materials — and cites both documents for every mismatch.
             </p>
           </div>

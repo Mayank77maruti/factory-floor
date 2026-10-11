@@ -1,5 +1,5 @@
 /**
- * Domain contracts and type definitions for Manufy Architect Mode.
+ * Domain contracts and type definitions for Astraea Architect Mode.
  * Covers pipeline runs, CAD geometry stages, Vertex AI Gemini metrology,
  * Cloud Storage object metadata, and Firestore persistence schemas.
  */

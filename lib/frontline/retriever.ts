@@ -1,5 +1,5 @@
 /**
- * Mock Data Retriever for Manufy Frontline Mode.
+ * Mock Data Retriever for Astraea Frontline Mode.
  *
  * Retrieves only the relevant mock operational records based on query intent,
  * supplying them as the sole factual source of truth to Vertex AI Gemini.

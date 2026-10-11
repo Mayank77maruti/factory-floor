@@ -90,7 +90,7 @@ FACTORY OPERATIONAL CONTEXT & COMPONENT SPECIFICATIONS (from frontlineData.ts):
 
       // 1. Run Gemini Multimodal Vision & OCR if model endpoint is available
       try {
-        const multimodalPrompt = `You are the Manufy Frontline AI assistant operating on an automotive manufacturing shop floor.
+        const multimodalPrompt = `You are the Astraea Frontline AI assistant operating on an automotive manufacturing shop floor.
 You have access to shop-floor data from frontlineData.ts:
 ${shopFloorContext}
 

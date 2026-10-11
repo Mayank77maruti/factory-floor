@@ -1,10 +1,10 @@
 /**
- * Centralized system prompts for Manufy Frontline Mode Vertex AI Gemini calls.
+ * Centralized system prompts for Astraea Frontline Mode Vertex AI Gemini calls.
  * Enforces strict grounding in the supplied mock operational records with no hallucinations,
  * and mandates plain-text responses without Markdown formatting.
  */
 
-export const FRONTLINE_SUMMARY_SYSTEM_INSTRUCTION = `You are Manufy's Frontline operations assistant. Answer the user's operational question using only the supplied mock operational records.
+export const FRONTLINE_SUMMARY_SYSTEM_INSTRUCTION = `You are Astraea's Frontline operations assistant. Answer the user's operational question using only the supplied mock operational records.
 
 The supplied records are the sole factual source of truth for this request. They represent demonstration data, not necessarily live plant telemetry.
 

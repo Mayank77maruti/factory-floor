@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Sidebar } from "./Sidebar";
 import { SystemMonitor } from "../../components/SystemMonitor";
+import { AstraeaLogo } from "../../components/AstraeaLogo";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -25,22 +26,13 @@ export function AppShell({
       {/* Top Bar - Full Width Edge to Edge */}
       <header className="h-12 border-b-2 border-[#101418] px-4 sm:px-6 flex items-center justify-between bg-[#FFFBF0] shrink-0 z-20">
         <div className="flex items-center gap-3">
-          {/* Manufy Wordmark & Logo Mark */}
+          {/* Astraea Wordmark & Logo Mark */}
           <Link
             href="/"
             className="flex items-center gap-2 text-[#101418] hover:opacity-90 transition-opacity group cursor-pointer"
-            title="Return to Manufy Landing Page"
+            title="Return to Astraea Landing Page"
           >
-            {/* Solid royal-blue square logo mark */}
-            <div className="w-5 h-5 bg-[#1E43D8] border border-[#101418] rounded-[3px] flex items-center justify-center p-0.5 shadow-2xs group-hover:bg-[#3E6BE0] transition-colors">
-              <svg viewBox="0 0 14 14" className="w-full h-full text-white" fill="none" stroke="currentColor">
-                <path d="M2 12L12 2M2 2L12 12" strokeWidth="1.6" strokeLinecap="round" />
-                <rect x="3" y="3" width="8" height="8" strokeWidth="1.2" strokeDasharray="1 1" />
-              </svg>
-            </div>
-            <span className="font-display font-bold text-base tracking-tight text-[#101418]">
-              Manufy
-            </span>
+            <AstraeaLogo size="sm" />
           </Link>
 
           <span className="text-[#101418]/30 select-none font-mono">/</span>

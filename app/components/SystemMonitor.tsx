@@ -98,7 +98,7 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
       ? "UNAVAILABLE"
       : "CHECKING";
 
-  // Industrial drafting status theme tokens (matching Manufy warm blueprint aesthetic)
+  // Industrial drafting status theme tokens (matching Astraea warm blueprint aesthetic)
   const statusAccent =
     overallStatus === "HEALTHY"
       ? { dot: "bg-[#16A34A]", badge: "text-[#16A34A] bg-[#DCFCE7] border-[#16A34A]/30" }
@@ -143,7 +143,7 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
       </button>
 
       {/* ------------------------------------------------------------- */}
-      {/* FLOATING STATUS WINDOW (Matching Manufy Technical Aesthetic)  */}
+      {/* FLOATING STATUS WINDOW (Matching Astraea Technical Aesthetic)  */}
       {/* ------------------------------------------------------------- */}
       {isOpen && (
         <div
@@ -158,7 +158,7 @@ export function SystemMonitor({ className = "" }: SystemMonitorProps) {
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-[2px] ${statusAccent.dot} inline-block`} />
               <span className="text-[11px] font-bold tracking-wider text-[#101418]">
-                MANUFY / SYS.MON
+                ASTRAEA / SYS.MON
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-[#101418]/70">

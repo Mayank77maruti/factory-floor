@@ -1,5 +1,5 @@
 /**
- * Centralized, validated environment configuration for Manufy.
+ * Centralized, validated environment configuration for Astraea.
  * Configured specifically for Google Cloud project builder-cup (asia-south1).
  */
 

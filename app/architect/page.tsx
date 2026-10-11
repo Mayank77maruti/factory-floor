@@ -12,6 +12,7 @@ import { Sidebar } from "../app/components/Sidebar";
 import { UploadState } from "../app/components/UploadState";
 import { RunView } from "../app/components/RunView";
 import { SystemMonitor } from "../components/SystemMonitor";
+import { AstraeaLogo } from "../components/AstraeaLogo";
 import { ActiveRunState, generateRandomStageDurations } from "../app/runState";
 
 export default function ArchitectPage() {
@@ -218,26 +219,17 @@ export default function ArchitectPage() {
   return (
     <div className="h-screen w-screen bg-[#FFFBF0] flex flex-col overflow-hidden text-[#101418] font-sans antialiased relative selection:bg-[#E8EEFC] selection:text-[#1E43D8]">
       {/* =========================================================================
-          TOP HEADER BAR (Unchanged Manufy Brand Header)
+          TOP HEADER BAR (Unchanged Astraea Brand Header)
       ========================================================================= */}
       <header className="h-12 border-b-2 border-[#101418] px-4 sm:px-6 flex items-center justify-between bg-[#FFFBF0] shrink-0 z-20">
         <div className="flex items-center gap-3">
-          {/* Manufy Wordmark & Logo Mark */}
+          {/* Astraea Wordmark & Logo Mark */}
           <Link
             href="/"
             className="flex items-center gap-2 text-[#101418] hover:opacity-90 transition-opacity group cursor-pointer"
-            title="Return to Manufy Landing Page"
+            title="Return to Astraea Landing Page"
           >
-            {/* Solid royal-blue square logo mark */}
-            <div className="w-5 h-5 bg-[#1E43D8] border border-[#101418] rounded-[3px] flex items-center justify-center p-0.5 shadow-2xs group-hover:bg-[#3E6BE0] transition-colors">
-              <svg viewBox="0 0 14 14" className="w-full h-full text-white" fill="none" stroke="currentColor">
-                <path d="M2 12L12 2M2 2L12 12" strokeWidth="1.6" strokeLinecap="round" />
-                <rect x="3" y="3" width="8" height="8" strokeWidth="1.2" strokeDasharray="1 1" />
-              </svg>
-            </div>
-            <span className="font-display font-bold text-base tracking-tight text-[#101418]">
-              Manufy
-            </span>
+            <AstraeaLogo size="sm" />
           </Link>
         </div>
 

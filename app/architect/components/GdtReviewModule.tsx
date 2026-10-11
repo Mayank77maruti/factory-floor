@@ -556,7 +556,7 @@ export function GdtReviewModule({
               Do these tolerances actually work together?
             </h1>
             <p className="font-sans text-[14px] sm:text-[15px] text-[#3C4356] leading-relaxed max-w-xl mx-auto">
-              Upload a drawing — Manufy checks every GD&T symbol, datum and tolerance against
+              Upload a drawing — Astraea checks every GD&T symbol, datum and tolerance against
               ASME Y14.5 and the Machinery&apos;s Handbook, and points at the exact callout behind every issue.
             </p>
           </div>

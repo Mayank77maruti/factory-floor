@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PlatformModeModal from "./PlatformModeModal";
 import BlueprintLoader from "./BlueprintLoader";
+import { AstraeaLogo } from "./AstraeaLogo";
 
 // =========================================================================
 // 1. FULL-SCREEN SCROLL CANVAS COMPONENT (Asset-Gated & WebP-Accelerated)
@@ -507,24 +508,7 @@ export function ArchitectHero({
           }`}>
             {/* Blueprint Geometric Logo + Brand Name */}
             <div className="flex items-center gap-2 pr-3 sm:pr-4 border-r border-[#292929]/20">
-              <svg
-                className="w-5 h-5 text-[#124ead] flex-shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#124ead"
-                strokeWidth="1.8"
-              >
-                <rect x="2" y="2" width="20" height="20" stroke="#124ead" strokeWidth="1.5" />
-                <line x1="12" y1="2" x2="12" y2="22" stroke="#124ead" strokeWidth="1.2" />
-                <line x1="2" y1="12" x2="22" y2="12" stroke="#124ead" strokeWidth="1.2" />
-                <line x1="4.5" y1="5.5" x2="9.5" y2="5.5" stroke="#124ead" strokeWidth="1.2" />
-                <line x1="4.5" y1="8" x2="9.5" y2="8" stroke="#124ead" strokeWidth="1.2" />
-                <line x1="4.5" y1="10.5" x2="9.5" y2="10.5" stroke="#124ead" strokeWidth="1.2" />
-                <polygon points="17,5 14,10 20,10" fill="#124ead" stroke="none" />
-                <circle cx="7" cy="17" r="2.8" stroke="#124ead" strokeWidth="1.2" />
-                <circle cx="7" cy="17" r="1" fill="#124ead" />
-                <rect x="14.5" y="14.5" width="5" height="5" fill="#124ead" />
-              </svg>
+              <AstraeaLogo variant="mark" size="sm" />
 
               <div className="flex items-center">
                 {isEditingBrand ? (
@@ -573,12 +557,7 @@ export function ArchitectHero({
                 onClick={() => setIsModeModalOpen(true)}
                 className="group inline-flex items-center gap-2 bg-[#124ead] hover:bg-[#0d3b85] text-white text-[11px] sm:text-[12px] font-semibold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-[3px] transition-all shadow-sm active:scale-95 select-none cursor-pointer"
               >
-                <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#ff5500] rounded-[2px] flex items-center justify-center p-0.5 flex-shrink-0">
-                  <svg viewBox="0 0 14 14" className="w-full h-full text-white" fill="none" stroke="currentColor">
-                    <path d="M2 12L12 2M2 2L12 12" strokeWidth="1.6" strokeLinecap="round" />
-                    <rect x="3" y="3" width="8" height="8" strokeWidth="1.2" strokeDasharray="1 1" />
-                  </svg>
-                </div>
+                <AstraeaLogo variant="mark" size="xs" theme="orange" />
                 <span className="whitespace-nowrap tracking-normal">Explore Platform</span>
               </button>
             </div>

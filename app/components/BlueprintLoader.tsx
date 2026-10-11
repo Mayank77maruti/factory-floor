@@ -104,7 +104,7 @@ export function BlueprintLoader({
           <div className="inline-flex items-center gap-2 bg-[#FFFBF0] border border-[#101418] px-3 py-1 rounded-[2px] shadow-xs">
             <span className="w-2 h-2 rounded-full bg-[#124ead] animate-ping" />
             <span className="font-mono text-[10px] sm:text-[11px] font-bold text-[#101418] uppercase tracking-wider">
-              MANUFY // ASSET-GATED INITIALIZATION
+              ASTRAEA // ASSET-GATED INITIALIZATION
             </span>
           </div>
           <div className="font-mono text-[11px] sm:text-[12px] text-[#5c6470] uppercase tracking-wider">

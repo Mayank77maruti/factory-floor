@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { AstraeaLogo } from "./AstraeaLogo";
 
 export function LandingFooter() {
   return (
@@ -11,11 +12,8 @@ export function LandingFooter() {
         {/* Top Brand & Status Section */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-10 border-b border-[#101418]/15">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-3 h-3 bg-[#ff5500] rounded-[2px]" />
-              <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#101418] font-mono">
-                MANUFY
-              </span>
+            <div className="flex items-center gap-3 mb-2">
+              <AstraeaLogo size="md" />
               <span className="text-[#101418]/30 font-mono text-sm">//</span>
               <span className="text-xs font-mono text-[#5c6470] tracking-wider font-semibold">
                 INDUSTRIAL INTELLIGENCE
@@ -152,7 +150,7 @@ export function LandingFooter() {
         {/* Bottom Bar: Copyright & Compliance */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px] text-[#5c6470]">
           <div>
-            © 2026 Manufy Systems, Inc. All rights reserved. Built for precision factory floors.
+            © 2026 Astraea Systems, Inc. All rights reserved. Built for precision factory floors.
           </div>
           <div className="flex items-center gap-4">
             <span className="hover:text-[#101418] cursor-pointer">PRIVACY</span>

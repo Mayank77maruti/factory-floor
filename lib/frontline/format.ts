@@ -1,5 +1,5 @@
 /**
- * Plain-text formatting and sanitization utility for Manufy Frontline Mode.
+ * Plain-text formatting and sanitization utility for Astraea Frontline Mode.
  *
  * Strips Markdown syntax (bold asterisks, headings, backticks, fences)
  * to ensure chat messages display cleanly in plain text without literal

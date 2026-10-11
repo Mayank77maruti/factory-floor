@@ -1,5 +1,5 @@
 /**
- * Google Cloud Vertex AI Gemini Client & Service Layer for Manufy Architect Mode.
+ * Google Cloud Vertex AI Gemini Client & Service Layer for Astraea Architect Mode.
  *
  * Configured for project `builder-cup` in region `asia-south1` with `gemini-2.5-flash`.
  * Implements robust JSON parsing, transient-error retries, fallback tracking,

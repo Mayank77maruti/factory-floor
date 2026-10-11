@@ -12,7 +12,7 @@ export function DrawingSheet({ fileName = "clevis.step" }: DrawingSheetProps) {
   const variant: DrawingVariant = getDrawingVariant(fileName);
 
   const handleDownload = () => {
-    const svgElement = document.getElementById("manufy-drawing-svg");
+    const svgElement = document.getElementById("astraea-drawing-svg");
     if (!svgElement) return;
     const svgData = new XMLSerializer().serializeToString(svgElement);
     const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
@@ -70,7 +70,7 @@ export function DrawingSheet({ fileName = "clevis.step" }: DrawingSheetProps) {
         <div className="mt-5 p-3 sm:p-5 bg-stone-100/70 border-2 border-[#101418] rounded-lg overflow-x-auto flex justify-center shadow-inner">
           <div className="w-full min-w-[700px] max-w-6xl bg-white rounded border-2 border-[#101418] shadow-hard-xs select-none">
             <svg
-              id="manufy-drawing-svg"
+              id="astraea-drawing-svg"
               viewBox="0 0 1200 840"
               className="w-full h-auto text-[#101418] font-sans"
               style={{ backgroundColor: "#ffffff" }}
@@ -98,12 +98,12 @@ export function DrawingSheet({ fileName = "clevis.step" }: DrawingSheetProps) {
                 >
                   <path d="M 10 1.5 L 0 5 L 10 8.5 z" fill="#101418" />
                 </marker>
-                <pattern id="manufy-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+                <pattern id="astraea-grid" width="28" height="28" patternUnits="userSpaceOnUse">
                   <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(31,58,138,0.08)" strokeWidth="0.8" />
                 </pattern>
               </defs>
 
-              <rect width="1200" height="840" fill="url(#manufy-grid)" />
+              <rect width="1200" height="840" fill="url(#astraea-grid)" />
 
               {/* Outer Border (ASME Zone Margin) */}
               <rect x="20" y="20" width="1160" height="800" fill="none" stroke="#101418" strokeWidth="2.5" />
@@ -158,7 +158,7 @@ export function DrawingSheet({ fileName = "clevis.step" }: DrawingSheetProps) {
               {variant.variantKey === "B" && <VariantBViews />}
               {variant.variantKey === "C" && <VariantCViews />}
 
-              {/* TITLE BLOCK: MANUFY */}
+              {/* TITLE BLOCK: ASTRAEA */}
               <g transform="translate(680, 680)">
                 <rect width="480" height="120" fill="#FFFBF0" stroke="#101418" strokeWidth="2" />
                 <line x1="0" y1="36" x2="480" y2="36" stroke="#101418" strokeWidth="1.5" />
@@ -169,7 +169,7 @@ export function DrawingSheet({ fileName = "clevis.step" }: DrawingSheetProps) {
 
                 {/* Organization */}
                 <text x="12" y="16" fontSize="8" fontWeight="700" fontFamily="monospace" fill="#101418">ORGANIZATION</text>
-                <text x="12" y="30" fontSize="11" fontWeight="700" fontFamily="monospace" fill="#101418">MANUFY AUTODRAFT SYSTEM</text>
+                <text x="12" y="30" fontSize="11" fontWeight="700" fontFamily="monospace" fill="#101418">ASTRAEA AUTODRAFT SYSTEM</text>
 
                 {/* Title */}
                 <text x="172" y="16" fontSize="8" fontWeight="700" fontFamily="monospace" fill="#101418">TITLE</text>

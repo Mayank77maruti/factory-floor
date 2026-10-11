@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { AstraeaLogo } from "./AstraeaLogo";
 
 export interface PlatformModeOverlayProps {
   isOpen: boolean;
@@ -59,11 +60,8 @@ export function PlatformModeModal({
         <div className="flex items-center justify-between pb-4 border-b border-[#101418]/15">
           {/* Eyebrow Status Badge */}
           <div className="inline-flex items-center gap-2 bg-[#FFFBF0] border border-[#101418]/25 px-2.5 py-1 rounded-[3px] text-[11px] font-mono tracking-wider text-[#101418] shadow-[1px_1px_0_#101418]/20">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#124ead] opacity-75 motion-reduce:hidden" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#124ead]" />
-            </span>
-            <span className="font-bold">MANUFY</span>
+            <AstraeaLogo variant="mark" size="xs" />
+            <span className="font-bold">ASTRAEA</span>
             <span className="text-[#101418]/30">//</span>
             <span className="text-[#5c6470] font-semibold">WORKSPACE SELECTOR</span>
           </div>

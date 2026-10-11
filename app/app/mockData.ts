@@ -60,7 +60,7 @@ export const MOCK_RUNS: RunHistoryItem[] = [
   },
   {
     id: "run-8",
-    name: "Manufy-demo-X-Carriage-Cable-...",
+    name: "Astraea-demo-X-Carriage-Cable-...",
     timestamp: "Sep 25, 02:32 PM",
     stagesCompleted: "6/6 stages",
     status: "success",

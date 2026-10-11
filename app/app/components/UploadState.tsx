@@ -25,7 +25,7 @@ export function UploadState({ onStartRun }: UploadStateProps) {
   const handleSelectSample = () => {
     // Generate a minimal sample STEP blob for live testing
     const sampleBlob = new Blob([
-      "ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Manufy Autodraft Sample Part'),'2;1');\nFILE_NAME('clevis.step','2026-10-10',('Mayank'),('Manufy'),'Core CAD','AutoDraft',#1);\nENDSEC;\nDATA;\n#10=MANIFOLD_SOLID_BREP('CLEVIS_BODY',#20);\nENDSEC;\nEND-ISO-10303-21;\n"
+      "ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Astraea Autodraft Sample Part'),'2;1');\nFILE_NAME('clevis.step','2026-10-10',('Mayank'),('Astraea'),'Core CAD','AutoDraft',#1);\nENDSEC;\nDATA;\n#10=MANIFOLD_SOLID_BREP('CLEVIS_BODY',#20);\nENDSEC;\nEND-ISO-10303-21;\n"
     ], { type: "application/octet-stream" });
     const sampleFile = new File([sampleBlob], "clevis.step", { type: "application/octet-stream" });
 

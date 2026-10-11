@@ -1051,7 +1051,7 @@ function SampleCard({
       </div>
 
       <div className="px-3.5 py-2.5 border-t border-[#101418]/15 bg-[#FBF6E9] flex items-center justify-between font-mono text-[10px] font-bold uppercase tracking-wider text-[#101418]/60">
-        <span>GUIDED · BY MANUFY</span>
+        <span>GUIDED · BY ASTRAEA</span>
         <Play className="w-3 h-3 text-[#1E43D8] group-hover:translate-x-0.5 transition-transform" />
       </div>
     </div>

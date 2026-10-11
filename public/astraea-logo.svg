@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 36" width="160" height="36" fill="none">
+  <!-- Icon Mark (32x32 at x=2, y=2) -->
+  <g transform="translate(2, 2)">
+    <!-- Rounded technical badge background -->
+    <rect width="32" height="32" rx="7" fill="#1E43D8" stroke="#101418" stroke-width="1.5" />
+    
+    <!-- Subtle technical drafting alignment grid -->
+    <line x1="16" y1="2" x2="16" y2="30" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="0.75" stroke-dasharray="1 2" />
+    <line x1="2" y1="16" x2="30" y2="16" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="0.75" stroke-dasharray="1 2" />
+    
+    <!-- Left Faceted Blade of the 'A' -->
+    <path d="M16 5.5L7 25.5H11.5L16 15.5V5.5Z" fill="#FFFFFF" fill-opacity="0.95" />
+    
+    <!-- Right Faceted Blade of the 'A' -->
+    <path d="M16 5.5L25 25.5H20.5L16 15.5V5.5Z" fill="#FFFFFF" fill-opacity="0.78" />
+    
+    <!-- Precision Engineering Datum Crossbar with calibrated center node -->
+    <path d="M9.8 19.2H22.2" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+    <circle cx="16" cy="19.2" r="1.4" fill="#1E43D8" stroke="#FFFFFF" stroke-width="1" />
+    
+    <!-- Astraea 4-Point Radiant Star in the Apex Aperture -->
+    <path d="M16 9L17.1 11.7L19.8 12.8L17.1 13.9L16 16.6L14.9 13.9L12.2 12.8L14.9 11.7Z" fill="#FFC53D" />
+  </g>
+  
+  <!-- Typographic Wordmark -->
+  <text x="44" y="24" font-family="system-ui, -apple-system, 'Geist', sans-serif" font-size="20" font-weight="800" letter-spacing="-0.03em" fill="#101418">Astraea</text>
+  
+  <!-- Subtitle Tagline in Technical Mono -->
+  <text x="122" y="14" font-family="'Geist Mono', monospace" font-size="6.5" font-weight="700" letter-spacing="0.1em" fill="#1E43D8">AI</text>
+</svg>
+

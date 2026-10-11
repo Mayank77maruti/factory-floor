@@ -395,7 +395,7 @@ export function DesignIntelligenceModule({
               Which dimensions is this drawing missing?
             </h1>
             <p className="font-sans text-[14px] sm:text-[15px] text-[#3C4356] leading-relaxed max-w-xl mx-auto">
-              Upload a drawing — Manufy checks every feature for a defining dimension or
+              Upload a drawing — Astraea checks every feature for a defining dimension or
               callout, and takes you to the exact spot for each gap.
             </p>
           </div>
@@ -1455,7 +1455,7 @@ function DrawingSVG({
           SHEET 1 OF 1
         </text>
         <text x="10" y="98" fontSize="9" fontFamily="monospace" stroke="none" fill="#101418">
-          INSP: MANUFY REVIEW
+          INSP: ASTRAEA REVIEW
         </text>
         <text x="160" y="98" fontSize="10" fontFamily="monospace" fontWeight="bold" stroke="none" fill="#101418">
           REV C

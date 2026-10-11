@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Architects_Daughter } from "next/font/google";
 import "./globals.css";
 
@@ -18,9 +18,26 @@ const architectsDaughter = Architects_Daughter({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#1E43D8",
+};
+
 export const metadata: Metadata = {
-  title: "Industrial Intelligence // Autonomous Manufacturing Platform",
-  description: "From engineering drawings to actionable factory intelligence.",
+  title: {
+    default: "Astraea · Autonomous Factory Intelligence",
+    template: "%s · Astraea",
+  },
+  description: "From engineering drawings to autonomous ASME Y14.5 verification and real-time shop-floor execution.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

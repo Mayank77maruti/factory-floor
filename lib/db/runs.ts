@@ -1,5 +1,5 @@
 /**
- * Pipeline Runs Repository for Manufy Architect Mode.
+ * Pipeline Runs Repository for Astraea Architect Mode.
  *
  * Persists and retrieves pipeline execution records, stage outputs,
  * Cloud Storage artifact references, and structured logs to Firestore Native.

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { SystemMonitor } from "../components/SystemMonitor";
+import { AstraeaLogo } from "../components/AstraeaLogo";
 
 // =========================================================================
 // TYPES & DATA
@@ -1359,15 +1360,10 @@ export default function FrontlinePage() {
           HEADER BAR (SHARED ACROSS VIEWS)
       ========================================================================= */}
       <header className="h-14 sm:h-16 border-b-[1.5px] border-[#101418] bg-[#FFFBF0] px-4 sm:px-8 flex items-center justify-between flex-shrink-0 z-30">
-        {/* Left: Manufy logo + optional "← Today" button in chat mode */}
+        {/* Left: Astraea logo + optional "← Today" button in chat mode */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-5 h-5 bg-[#1E43D8] rounded-[2px] flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              M
-            </div>
-            <span className="font-display font-bold text-lg sm:text-xl tracking-tight text-[#101418]">
-              Manufy
-            </span>
+            <AstraeaLogo size="sm" />
           </Link>
 
           {view === "chat" && (

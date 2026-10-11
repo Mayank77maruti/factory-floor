@@ -1,5 +1,5 @@
 /**
- * Centralized mock operational data source for Manufy Frontline Mode.
+ * Centralized mock operational data source for Astraea Frontline Mode.
  *
  * This is the single factual source of truth representing the shop-floor
  * demonstration state across shifts, equipment, inventory, and training.

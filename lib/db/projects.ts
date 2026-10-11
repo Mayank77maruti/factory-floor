@@ -1,5 +1,5 @@
 /**
- * Projects Repository for Manufy Architect Mode.
+ * Projects Repository for Astraea Architect Mode.
  *
  * Persists and retrieves plant project records, drawing revisions,
  * Cloud Storage artifact references, and review statuses in Google Cloud Firestore Native.

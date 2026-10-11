@@ -9,7 +9,7 @@
   --cobalt: #124ead;
   --annotation-grey: #6b7280;
   
-  /* Manufy Design System Colors */
+  /* Astraea Design System Colors */
   --color-paper: #F6EFDB;
   --color-sheet: #FFFBF0;
   --color-cream: #FBF6E9;
@@ -67,7 +67,7 @@ body {
   background-size: 18px 18px, 18px 18px, 90px 90px, 90px 90px;
 }
 
-/* Manufy Blueprint Graph-Paper Grid (/app background) */
+/* Astraea Blueprint Graph-Paper Grid (/app background) */
 .bg-graphpaper {
   background-color: #F6EFDB;
   background-image: 
@@ -101,7 +101,7 @@ body {
   box-shadow: 3px 3px 0 #101418;
 }
 
-/* Manufy Button Press Effect */
+/* Astraea Button Press Effect */
 .btn-royal {
   background-color: #1E43D8;
   color: #ffffff;

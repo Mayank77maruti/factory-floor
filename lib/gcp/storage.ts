@@ -1,5 +1,5 @@
 /**
- * Google Cloud Storage Service Layer for Manufy Architect Mode.
+ * Google Cloud Storage Service Layer for Astraea Architect Mode.
  *
  * Stores CAD source files (.step/.stp) and 2D blueprints (.pdf/.png),
  * as well as generated pipeline artifacts and orthographic renders.

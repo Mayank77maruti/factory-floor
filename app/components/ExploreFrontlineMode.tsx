@@ -496,7 +496,7 @@ export function ExploreFrontlineMode() {
 
               <div className="bg-[#1E43D8]/8 border border-[#1E43D8]/25 rounded-[6px] p-2.5">
                 <div className="flex items-center justify-between font-mono text-[9.5px] sm:text-[10px] font-bold text-[#1E43D8] mb-1">
-                  <span>⚡ Manufy Copilot</span>
+                  <span>⚡ Astraea Copilot</span>
                   <span className="text-[#1E43D8]/70 font-normal text-[8.5px]">AI Agent</span>
                 </div>
                 <div className="text-[10.5px] sm:text-[11.5px] text-[#101418] font-mono leading-snug">

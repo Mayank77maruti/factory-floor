@@ -1,5 +1,5 @@
 /**
- * Google Cloud Firestore Client & Service Layer for Manufy Architect Mode.
+ * Google Cloud Firestore Client & Service Layer for Astraea Architect Mode.
  *
  * Configured for Firestore Native mode with database `(default)` in project `builder-cup`.
  * Enforces strict error surfacing when in live mode, avoiding silent in-memory substitution.

@@ -1,5 +1,5 @@
 /**
- * Structured logger for Manufy Architect Mode.
+ * Structured logger for Astraea Architect Mode.
  * Outputs machine-parseable JSON logs suitable for Cloud Logging and local terminal debugging.
  */
 

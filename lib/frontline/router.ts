@@ -1,5 +1,5 @@
 /**
- * Deterministic intent router for Manufy Frontline Mode.
+ * Deterministic intent router for Astraea Frontline Mode.
  *
  * Implements strict three-path decision architecture:
  * - PATH_A: Existing supported interactive mock handlers (cards, checklists, approval).
