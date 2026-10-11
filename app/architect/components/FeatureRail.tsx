@@ -7,7 +7,6 @@ import {
   Crosshair,
   TableProperties,
   FolderKanban,
-  ClipboardList,
 } from "lucide-react";
 
 export interface ModuleItem {
@@ -60,12 +59,6 @@ export const WORKSPACE_ITEMS: ModuleItem[] = [
     label: "Projects",
     icon: FolderKanban,
     description: "Manage plant projects, drawing revisions, and release packages.",
-  },
-  {
-    id: "ws-my-reviews",
-    label: "My Reviews",
-    icon: ClipboardList,
-    description: "Audit trail of your sign-offs, flagged discrepancies, and notes.",
   },
 ];
 

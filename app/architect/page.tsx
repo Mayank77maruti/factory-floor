@@ -370,7 +370,7 @@ export default function ArchitectPage() {
                 onBackToModules={() => setActiveModuleId("01-autodraft")}
               />
             ) : (
-              /* WORKSPACE: IN PREPARATION PLACEHOLDER (e.g. My Reviews) */
+              /* WORKSPACE: IN PREPARATION PLACEHOLDER */
               <PlaceholderModule module={currentModule} />
             )}
           </div>
