@@ -99,10 +99,17 @@ export const PERSONAS: Persona[] = [
     avatarTextColor: "#FFFFFF",
     role: "Maintenance",
     shift: "Shift 2",
-    subline: "3 active tickets · Press 3 is still drifting · Tool Crib B is low on inserts",
+    subline: "4 active tickets · Press 3 is still drifting · Tool Crib B is low on inserts",
     greeting: "Morning. I'm watching Press 3, the CNC bay and Tool Crib B. Ask me anything the floor has ever fixed — or I'll flag what drifts.",
     assigneeName: "Devin",
     tickets: [
+      {
+        code: "W-3324",
+        title: "Fix loose steel bracket — Engine Line 2",
+        status: "HIGH",
+        meta: "ASSIGNED TO MARCUS T. · SAFETY STOP",
+        icon: "wrench",
+      },
       {
         code: "W-3321",
         title: "Fix the steel bracket loosening — Engine Line 2",
@@ -337,6 +344,64 @@ export const MOCK_VERIFIED_OIL_SERVICE = {
   summary: "ISO 46 change on Apr 02 by Devin. Next due at 1,500 hrs. Cage D has 2 in stock.",
   sopCitation: "SOP-HYD-11",
   verifiedDate: "Apr 02",
+};
+
+// ---------------------------------------------------------------------------
+// 3b. MOCK BRACKET FIX HISTORY FOR TICKET W-3324 (Engine Line 2)
+// ---------------------------------------------------------------------------
+export interface FixHistoryData {
+  ticketCode?: string;
+  equipment?: string;
+  summary: string;
+  sopCitation: string;
+  entries: Array<{
+    title: string;
+    sub: string;
+    date: string;
+    highlight?: boolean;
+  }>;
+  footerText?: string;
+}
+
+export const MOCK_BRACKET_FIX_HISTORY: FixHistoryData = {
+  ticketCode: "W-3324",
+  equipment: "Steel Mounting Bracket (Engine Line 2 · Part #BRK-ENG-02)",
+  summary:
+    "Torqued all 6 bracket bolts to 45 Nm with Loctite 243 on Mar 28 by Marcus T. Checked mount face for fretting; verified datum alignment per SOP-ENG-14.",
+  sopCitation: "CITES SOP-ENG-14 · MAR 28 · RESOLVED BY MARCUS T.",
+  entries: [
+    {
+      title: "Engine Line 2 bracket re-torque & threadlock",
+      sub: "Torqued 6x M8 grade 8.8 bolts to 45 Nm with Loctite 243 · resolved by Marcus T.",
+      date: "Mar 28",
+      highlight: true,
+    },
+    {
+      title: "Mount face fretting & washer upgrade",
+      sub: "Replaced 2 fatigued spring washers with Nord-Lock wedge washers · per Marcus T.",
+      date: "Mar 04",
+      highlight: false,
+    },
+    {
+      title: "Conveyor frame fastener replacement",
+      sub: "Replaced stripped M8 hex bolts with 10.9 high-tensile fasteners · per Devin M.",
+      date: "Feb 18",
+      highlight: false,
+    },
+    {
+      title: "Laser datum alignment check",
+      sub: "Checked bracket planar deviation (<0.2mm lateral play on guide rail) · per Mike T.",
+      date: "Jan 22",
+      highlight: false,
+    },
+    {
+      title: "Initial Engine Line 2 bracket installation",
+      sub: "Installed per drawing BRK-ENG-02; torqued all 6 fasteners to 45 Nm nominal spec",
+      date: "Oct 14",
+      highlight: false,
+    },
+  ],
+  footerText: "+5 previous bracket fixes captured on Engine Line 2. Known vibration loosening zone.",
 };
 
 // ---------------------------------------------------------------------------

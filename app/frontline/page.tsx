@@ -10,9 +10,11 @@ import { SystemMonitor } from "../components/SystemMonitor";
 import {
   PERSONAS,
   FRONTLINE_GUARDRAIL_MESSAGE,
+  MOCK_BRACKET_FIX_HISTORY,
   type Persona,
   type Ticket,
   type TicketStatus,
+  type FixHistoryData,
 } from "@/lib/mock/frontlineData";
 import { classifyFrontlineIntent } from "@/lib/frontline/router";
 import { formatFrontlinePlainText } from "@/lib/frontline/format";
@@ -42,7 +44,8 @@ type MessageType =
     }
   | { type: "training_card" }
   | { type: "live_count_card"; showApproveBtn?: boolean }
-  | { type: "history_card" }
+  | { type: "history_card"; historyData?: FixHistoryData }
+  | { type: "drift_card" }
   | { type: "status_pill"; text: string; dotColor?: string }
   | { type: "outcome_pill"; text: string };
 
@@ -170,7 +173,7 @@ function StatusPill({ status }: { status: TicketStatus }) {
 
 // (a) PLAN Turn (animated checklist + stage-sequenced pills)
 function PlanTurn({
-  title = "● SIDEKICK'S PLAN",
+  title = "● FRONTLINE'S PLAN",
   checklist = [
     "Flag the drift: Press 3 · Line 2",
     "Create work order W-3318",
@@ -403,51 +406,68 @@ function LiveCountCard() {
 }
 
 // (d) HISTORY Card
-function HistoryCard() {
+function HistoryCard({ historyData }: { historyData?: FixHistoryData }) {
+  const summary =
+    historyData?.summary ||
+    "ISO 46 change on Apr 02 by Devin. Next due at 1,500 hrs. Cage D has 2 in stock.";
+  const sopCitation =
+    historyData?.sopCitation || "CITES SOP-HYD-11 · APR 02 · VERIFIED";
+  const entries = historyData?.entries || [
+    {
+      title: "Conveyor 3 bearing failure",
+      sub: "Replace 6205-2RS · resolved by Mike T.",
+      date: "Today",
+      highlight: false,
+    },
+    {
+      title: "CNC-3 coolant PSI drop",
+      sub: "Check pump seal · cited SOP-CNC-07 p3",
+      date: "Apr 14",
+      highlight: false,
+    },
+    {
+      title: "Forklift battery rotation",
+      sub: "Bank A → C every Tues · per Mike",
+      date: "Apr 11",
+      highlight: false,
+    },
+    {
+      title: "Allen-Bradley fault E-04",
+      sub: "Reset sequence + photo · per Devin",
+      date: "Apr 06",
+      highlight: false,
+    },
+    {
+      title: "Hydraulic press oil change",
+      sub: "ISO 46 · every 500 hrs · Cage D",
+      date: "Apr 02",
+      highlight: true,
+    },
+  ];
+
   return (
     <div className="w-full max-w-[560px] bg-[#FFFBF0] border-2 border-[#101418] rounded-[14px] p-4 sm:p-5 shadow-hard space-y-3.5 animate-slide-up">
+      {historyData?.equipment && (
+        <div className="flex items-center justify-between text-[11px] font-mono text-[#5C6470] font-semibold border-b border-[#101418]/10 pb-1.5">
+          <span>{historyData.equipment}</span>
+          {historyData.ticketCode && (
+            <span className="px-1.5 py-0.5 rounded bg-[#1E43D8] text-white text-[10px]">
+              {historyData.ticketCode}
+            </span>
+          )}
+        </div>
+      )}
       <div className="bg-[#FFF3C4] border-[1.5px] border-[#101418] rounded-[10px] p-3 space-y-1 shadow-xs">
         <p className="font-sans text-[13px] text-[#101418] leading-relaxed">
-          ISO 46 change on Apr 02 by Devin. Next due at 1,500 hrs. Cage D has 2 in stock.
+          {summary}
         </p>
         <div className="font-mono text-[10px] text-[#5C6470] tracking-wider uppercase font-semibold">
-          CITES SOP-HYD-11 · APR 02 · VERIFIED
+          {sopCitation}
         </div>
       </div>
 
       <div className="bg-white border border-[#101418]/15 rounded-xl overflow-hidden divide-y divide-[#101418]/10 shadow-xs">
-        {[
-          {
-            title: "Conveyor 3 bearing failure",
-            sub: "Replace 6205-2RS · resolved by Mike T.",
-            date: "Today",
-            highlight: false,
-          },
-          {
-            title: "CNC-3 coolant PSI drop",
-            sub: "Check pump seal · cited SOP-CNC-07 p3",
-            date: "Apr 14",
-            highlight: false,
-          },
-          {
-            title: "Forklift battery rotation",
-            sub: "Bank A → C every Tues · per Mike",
-            date: "Apr 11",
-            highlight: false,
-          },
-          {
-            title: "Allen-Bradley fault E-04",
-            sub: "Reset sequence + photo · per Devin",
-            date: "Apr 06",
-            highlight: false,
-          },
-          {
-            title: "Hydraulic press oil change",
-            sub: "ISO 46 · every 500 hrs · Cage D",
-            date: "Apr 02",
-            highlight: true,
-          },
-        ].map((entry, idx) => (
+        {entries.map((entry, idx) => (
           <div
             key={idx}
             className={`px-3.5 py-2.5 flex items-center justify-between transition-colors ${
@@ -473,8 +493,91 @@ function HistoryCard() {
 
       <div className="flex items-center gap-1.5 pt-0.5 text-[12px] font-sans">
         <span className="w-1.5 h-1.5 rounded-full bg-[#1E43D8] flex-shrink-0" />
-        <span className="text-[#5C6470]">+12 entries captured this week.</span>
-        <span className="font-bold text-[#101418]">Nothing walks out the door</span>
+        {historyData?.footerText ? (
+          <span className="text-[#5C6470] font-medium">{historyData.footerText}</span>
+        ) : (
+          <>
+            <span className="text-[#5C6470]">+12 entries captured this week.</span>
+            <span className="font-bold text-[#101418]">Nothing walks out the door</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// (e) DRIFT EQUIPMENT Card (Shows live drifting equipment before plan execution)
+function DriftEquipmentCard() {
+  return (
+    <div className="w-full max-w-[560px] bg-[#FFFBF0] border-2 border-[#101418] rounded-[14px] p-4 sm:p-5 shadow-hard space-y-3.5 animate-slide-up">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-2 border-b border-[#101418]/15">
+        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[#101418]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#D92D20] animate-ping" />
+          <span>ACTIVE EQUIPMENT DRIFT</span>
+        </div>
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#FEE4E2] text-[#D92D20] border-[1.5px] border-[#101418]">
+          2 ANOMALIES FLAGGED
+        </span>
+      </div>
+
+      {/* Equipment Drift Items */}
+      <div className="bg-white border border-[#101418]/15 rounded-xl overflow-hidden divide-y divide-[#101418]/10 shadow-xs">
+        {/* Item 1: Press 3 */}
+        <div className="p-3.5 bg-[#FFF9E6] border-l-4 border-l-[#D92D20] space-y-1.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-bold text-[14px] text-[#101418]">
+                Press 3
+              </span>
+              <span className="font-mono text-[11px] text-[#5C6470]">
+                Line 2 · Hydraulic Manifold
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-[#FEE4E2] text-[#D92D20] font-mono font-bold text-[10px] border border-[#D92D20]/25 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D92D20]" />
+              DRIFTING
+            </span>
+          </div>
+          <div className="font-sans text-[12.5px] text-[#101418] leading-snug">
+            Hydraulic temperature <strong>+13° over spec</strong> (+13° thermal drift, started 09:12 · pressure relief risk).
+          </div>
+          <div className="font-mono text-[10px] text-[#5C6470] tracking-wider uppercase font-semibold flex items-center justify-between pt-0.5">
+            <span>SOP-HYD-11 · CAGE D O-RING CHECK</span>
+            <span className="text-[#D92D20] font-bold">W-3318 · HIGH</span>
+          </div>
+        </div>
+
+        {/* Item 2: CNC-3 */}
+        <div className="p-3.5 space-y-1.5 hover:bg-[#F9F7F1] transition-colors">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-bold text-[14px] text-[#101418]">
+                CNC-3
+              </span>
+              <span className="font-mono text-[11px] text-[#5C6470]">
+                CNC Bay · Coolant Circuit
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-[#FEF0C7] text-[#B54708] font-mono font-bold text-[10px] border border-[#B54708]/25 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#B54708]" />
+              MAINTENANCE DUE
+            </span>
+          </div>
+          <div className="font-sans text-[12.5px] text-[#101418] leading-snug">
+            Coolant pressure dropping below 18 PSI (pump seal seepage · seal kit ETA Thursday).
+          </div>
+          <div className="font-mono text-[10px] text-[#5C6470] tracking-wider uppercase font-semibold flex items-center justify-between pt-0.5">
+            <span>SOP-CNC-07 P3</span>
+            <span>W-3307</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer status notice */}
+      <div className="flex items-center gap-1.5 pt-0.5 text-[12px] font-sans">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D92D20] flex-shrink-0" />
+        <span className="text-[#5C6470]">Press 3 thermal drift requires immediate action before automatic line shutdown.</span>
       </div>
     </div>
   );
@@ -724,6 +827,35 @@ export default function FrontlinePage() {
   ) => {
     setIsTyping(true);
 
+    const qLower = raw.toLowerCase();
+    const isBracketHistoryQuery =
+      qLower.includes("w-3324") ||
+      (qLower.includes("bracket") &&
+        (qLower.includes("history") ||
+          qLower.includes("fixed") ||
+          qLower.includes("previous") ||
+          qLower.includes("earlier") ||
+          qLower.includes("past")));
+
+    if (!attachedImage && isBracketHistoryQuery) {
+      setTimeout(() => {
+        setIsTyping(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent_text",
+            text: `Here's the previous fix history for W-3324 (Fix loose steel bracket — Engine Line 2), ${currentPersona.firstName}.`,
+            showLabel: true,
+          },
+          {
+            type: "history_card",
+            historyData: MOCK_BRACKET_FIX_HISTORY,
+          },
+        ]);
+      }, 500);
+      return;
+    }
+
     const isBracketSafetyQuestion =
       raw.toLowerCase().includes("bracket") ||
       (raw.toLowerCase().includes("loose") && raw.toLowerCase().includes("safe"));
@@ -889,6 +1021,7 @@ export default function FrontlinePage() {
             },
           ]);
         } else if (decision.scenario === "equipment_drift") {
+          // 1. First show what is drifting (the 2 equipment drift anomalies)
           setMessages((prev) => [
             ...prev,
             {
@@ -896,17 +1029,29 @@ export default function FrontlinePage() {
               text: "Two things nobody has reported yet.",
             },
             {
-              type: "plan_turn",
-              checklist: [
-                "Flag the drift: Press 3 · Line 2",
-                "Create work order W-3318",
-                `Text ${currentPersona.assigneeName} the fix history`,
-                "Save the fix to knowledge",
-              ],
-              ackText: `${currentPersona.firstName} acknowledged, ETA 10 min`,
-              outcomeText: "✓ Fix saved to the knowledge base",
+              type: "drift_card",
             },
           ]);
+
+          // 2. Then continue with the plan to resolve the drift
+          setTimeout(() => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                type: "plan_turn",
+                title: "● FRONTLINE'S PLAN",
+                badge: "W-3318 · HIGH",
+                checklist: [
+                  "Flag the drift: Press 3 · Line 2",
+                  "Create work order W-3318",
+                  `Text ${currentPersona.assigneeName} the fix history`,
+                  "Save the fix to knowledge",
+                ],
+                ackText: `${currentPersona.firstName} acknowledged, ETA 10 min`,
+                outcomeText: "✓ Fix saved to the knowledge base",
+              },
+            ]);
+          }, 1100);
         } else if (decision.scenario === "training") {
           setMessages((prev) => [
             ...prev,
@@ -1077,7 +1222,20 @@ export default function FrontlinePage() {
     setTimeout(() => {
       setIsTyping(false);
 
-      if (ticket.code === "W-3321") {
+      if (ticket.code === "W-3324" || ticket.title.toLowerCase().includes("fix loose steel bracket")) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "agent_text",
+            text: `Here's the previous fix history for W-3324 (Fix loose steel bracket — Engine Line 2), ${currentPersona.firstName}.`,
+            showLabel: true,
+          },
+          {
+            type: "history_card",
+            historyData: MOCK_BRACKET_FIX_HISTORY,
+          },
+        ]);
+      } else if (ticket.code === "W-3321") {
         setMessages((prev) => [
           ...prev,
           {
@@ -1106,8 +1264,11 @@ export default function FrontlinePage() {
             text: "Hydraulic temp 13° over spec — nobody has reported it",
           },
           {
+            type: "drift_card",
+          },
+          {
             type: "plan_turn",
-            title: "● SIDEKICK'S PLAN",
+            title: "● FRONTLINE'S PLAN",
             badge: "W-3318 · HIGH",
             checklist: [
               "Flag the drift: Press 3 · Line 2",
@@ -1826,7 +1987,15 @@ export default function FrontlinePage() {
                 if (msg.type === "history_card") {
                   return (
                     <div key={index} className="flex justify-start">
-                      <HistoryCard />
+                      <HistoryCard historyData={msg.historyData} />
+                    </div>
+                  );
+                }
+
+                if (msg.type === "drift_card") {
+                  return (
+                    <div key={index} className="flex justify-start">
+                      <DriftEquipmentCard />
                     </div>
                   );
                 }
