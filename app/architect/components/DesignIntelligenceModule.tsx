@@ -646,16 +646,6 @@ export function DesignIntelligenceModule({
               </div>
             </div>
           </div>
-
-          <div className="text-center pt-2">
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              className="font-mono text-xs font-semibold text-[#1E43D8] hover:underline cursor-pointer"
-            >
-              Skip to results →
-            </button>
-          </div>
         </div>
 
         <style jsx>{`

@@ -669,17 +669,6 @@ export function BomCheckModule({
               })}
             </div>
           </div>
-
-          {/* Click through escape hatch */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              className="font-mono text-xs font-semibold text-[#1E43D8] hover:underline cursor-pointer"
-            >
-              Skip to results →
-            </button>
-          </div>
         </div>
       </div>
     );
