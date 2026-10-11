@@ -184,7 +184,7 @@ export function FeatureRail({ activeModuleId, onSelectModule }: FeatureRailProps
               d
             </div>
             <div className="font-sans text-[12px] font-medium text-[#101418] truncate">
-              deb · <span className="text-[#101418]/70">Engineer </span>
+              User · <span className="text-[#101418]/70">Engineer </span>
             </div>
           </div>
         </div>
