@@ -1,7 +1,6 @@
 "use client";
 
 import { ArchitectHero } from "./components/ArchitectHero";
-import { FeatureWorkflowSections } from "./components/FeatureWorkflowSections";
 import { ArchitectModeExperience } from "./components/ArchitectModeExperience";
 import { ExploreFrontlineMode } from "./components/ExploreFrontlineMode";
 import { LandingFooter } from "./components/LandingFooter";
@@ -11,7 +10,6 @@ export default function Home() {
     <>
       <main className="min-h-screen bg-[#f4ebd7]">
         <ArchitectHero brandName="Manufy" />
-        <FeatureWorkflowSections />
         <ArchitectModeExperience />
         <ExploreFrontlineMode />
       </main>

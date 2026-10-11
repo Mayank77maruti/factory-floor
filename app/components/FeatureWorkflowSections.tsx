@@ -24,7 +24,7 @@ function ScribbleUnderline({ isVisible }: { isVisible: boolean }) {
 }
 
 // =========================================================================
-// DATA FOR THE 5 FEATURE SECTIONS (Exact Order & Content from prompt)
+// DATA FOR THE 3 FEATURE SECTIONS (Exact Order & Content from prompt)
 // =========================================================================
 export interface FeatureSectionData {
   id: string;
@@ -36,81 +36,58 @@ export interface FeatureSectionData {
   ctaText: string;
   hintText: string;
   primaryImage: string;
-  secondaryImage: string;
-  technicalLabel: string;
-  sheetNumber: string;
+  secondaryImage?: string;
+  sheetLabel: string;
+  coordX: string;
+  coordY: string;
+  statusChip: string;
 }
 
 const SECTIONS_DATA: FeatureSectionData[] = [
   {
-    id: "parsed-drawings",
-    stageNum: "①",
+    id: "autodraft",
+    stageNum: "01",
     panelSide: "left",
-    eyebrow: "① DRAWINGS, DECODED!",
-    headline: "Parsed Drawings",
-    body: "Drop in PDFs, DWGs, or scanned sheets. Every drawing becomes structured, searchable data — dimensions, callouts, revisions, all extracted.",
+    sheetLabel: "SHT. A-101 // FEAT. 01 // STEP TO SHEET AUTODRAFTING",
+    eyebrow: "© MODELS, DRAFTED!",
+    headline: "From model / to drawing",
+    body: "Drop in a STEP file and watch it become a real drawing. Eight stages pick the views, place the dimensions, and lay out the sheet — a complete, title-blocked, tolerance-ready 2D drawing, ready in seconds.",
     ctaText: "Watch the demo",
     hintText: "↳ explore features",
-    primaryImage: "/images/ezgif-frame-080.png",
-    secondaryImage: "/images/ezgif-frame-040.png",
-    technicalLabel: "VECTOR SPECIFICATION & METROLOGY EXTRACTION",
-    sheetNumber: "SHT. A-101 // FEAT. 01",
+    primaryImage: "/images/feat-01-autodraft.png",
+    coordX: "444.87",
+    coordY: "935.83",
+    statusChip: "8/8 STAGES",
   },
   {
-    id: "standards-checking",
-    stageNum: "②",
-    panelSide: "right",
-    eyebrow: "② INTENT, VERIFIED!",
-    headline: "Standards Checking",
-    body: "GD&T, tolerances, and callouts checked against ASME, ISO, and your own shop standards — before metal gets cut.",
-    ctaText: "Watch the demo",
-    hintText: "↳ explore features",
-    primaryImage: "/images/ezgif-frame-131.png",
-    secondaryImage: "/images/ezgif-frame-115.png",
-    technicalLabel: "TOLERANCE COMPLIANCE & ASME/ISO CHECK",
-    sheetNumber: "SHT. E-204 // FEAT. 02",
-  },
-  {
-    id: "revision-intelligence",
-    stageNum: "③",
+    id: "design-intelligence",
+    stageNum: "02",
     panelSide: "left",
-    eyebrow: "③ CHANGES, CAUGHT!",
-    headline: "Revision Intelligence",
-    body: "Every revision diffed automatically. Nothing slips through between rev A and rev C — every change traced to its source.",
+    sheetLabel: "SHT. A-102 // FEAT. 02 // DRAWING VERIFICATION & GD&T REVIEW",
+    eyebrow: "© ERRORS, CAUGHT!",
+    headline: "Reviewed before / production",
+    body: "A missing callout or a wrong tolerance is how parts get scrapped and lines stop. Design Intelligence and GD&T Review check the drawing before that happens — every issue pinned to the sheet, with the evidence right there.",
     ctaText: "Watch the demo",
     hintText: "↳ explore features",
-    primaryImage: "/images/ezgif-frame-180.png",
-    secondaryImage: "/images/ezgif-frame-165.png",
-    technicalLabel: "AUTOMATED REVISION DIFFING & PROVENANCE",
-    sheetNumber: "SHT. R-305 // FEAT. 03",
+    primaryImage: "/images/feat-02-gdt-review.png",
+    coordX: "312.40",
+    coordY: "580.12",
+    statusChip: "4 ISSUES FOUND",
   },
   {
-    id: "agentic-answers",
-    stageNum: "④",
-    panelSide: "right",
-    eyebrow: "④ QUESTIONS, ANSWERED!",
-    headline: "Agentic Answers",
-    body: "Ask anything about the drawing in plain language. Every answer cites the exact callout and governing requirement it came from.",
-    ctaText: "Watch the demo",
-    hintText: "↳ explore features",
-    primaryImage: "/images/ezgif-frame-240.png",
-    secondaryImage: "/images/ezgif-frame-250.png",
-    technicalLabel: "CONTEXTUAL SEMANTIC QUERY & GOVERNING CITATION",
-    sheetNumber: "SHT. Q-409 // FEAT. 04",
-  },
-  {
-    id: "shop-floor-handoff",
-    stageNum: "⑤",
+    id: "frontline-mode",
+    stageNum: "03",
     panelSide: "left",
-    eyebrow: "⑤ KNOWLEDGE, MOBILIZED!",
-    headline: "Shop-Floor Handoff",
-    body: "Export cut lists, inspection plans, and work instructions the floor can actually build from — intelligence that leaves the drawing.",
+    sheetLabel: "SHT. A-103 // FEAT. 03 // FRONTLINE KNOWLEDGE CAPTURE",
+    eyebrow: "© THE FLOOR, REMEMBERED!",
+    headline: "The company / brain",
+    body: "Your floor runs on know-how that lives in people's heads, not in documents. Frontline Mode captures it while the work happens — every fix, answer, and close call becomes searchable plant history. When a veteran retires, what they knew stays.",
     ctaText: "Watch the demo",
     hintText: "↳ explore features",
-    primaryImage: "/images/ezgif-frame-300.png",
-    secondaryImage: "/images/ezgif-frame-275.png",
-    technicalLabel: "WORK INSTRUCTION DISPATCH & FIELD MEASUREMENT SYNC",
-    sheetNumber: "SHT. X-512 // FEAT. 05",
+    primaryImage: "/images/feat-03-frontline-mode.png",
+    coordX: "188.25",
+    coordY: "724.60",
+    statusChip: "12 FIXES SAVED THIS WEEK",
   },
 ];
 
@@ -177,6 +154,10 @@ function FeatureSectionItem({
 
   const isDesktopLeft = data.panelSide === "left";
 
+  const [line1, line2] = data.headline.includes(" / ")
+    ? data.headline.split(" / ")
+    : [data.headline, ""];
+
   // Slow Ken Burns parallax: scale 1.05 -> 1.0, translateY ±40px
   const kenBurnsScale = prefersReducedMotion ? 1 : 1.05 - scrollProgress * 0.05;
   const kenBurnsY = prefersReducedMotion ? 0 : (scrollProgress - 0.5) * 40;
@@ -215,20 +196,22 @@ function FeatureSectionItem({
             </div>
 
             {/* Secondary Illustration Crossfade on Scroll */}
-            <div
-              className="absolute inset-0 w-full h-full transition-opacity duration-300 ease-out will-change-transform"
-              style={{
-                opacity: crossfadeOpacity,
-                transform: `scale(${kenBurnsScale}) translateY(${kenBurnsY * 0.6}px)`,
-              }}
-            >
-              <img
-                src={data.secondaryImage}
-                alt={`${data.headline} progression view`}
-                className="w-full h-full object-cover object-center block"
-                loading="lazy"
-              />
-            </div>
+            {data.secondaryImage && (
+              <div
+                className="absolute inset-0 w-full h-full transition-opacity duration-300 ease-out will-change-transform"
+                style={{
+                  opacity: crossfadeOpacity,
+                  transform: `scale(${kenBurnsScale}) translateY(${kenBurnsY * 0.6}px)`,
+                }}
+              >
+                <img
+                  src={data.secondaryImage}
+                  alt={`${data.headline} progression view`}
+                  className="w-full h-full object-cover object-center block"
+                  loading="lazy"
+                />
+              </div>
+            )}
 
             {/* Subtle Editorial Blueprint Multiply Tint */}
             <div className="absolute inset-0 bg-[#0046b4]/5 mix-blend-multiply pointer-events-none" />
@@ -244,6 +227,24 @@ function FeatureSectionItem({
 
             {/* Mobile Top Gradient */}
             <div className="lg:hidden absolute inset-0 bg-gradient-to-b from-[#f4ebd7]/95 via-[#f4ebd7]/80 to-transparent pointer-events-none" />
+
+            {/* Top-Right: Coordinate Chip */}
+            <div className="absolute top-3 sm:top-5 right-3 sm:right-6 z-20 pointer-events-none bg-[#f4ebd7]/95 backdrop-blur-[2px] border border-[#292929]/30 px-2 py-1 rounded-[2px] shadow-xs text-[10px] sm:text-[11px] font-mono text-[#5c6470] tracking-tight leading-[1.25]">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#3a3f47]">X</span>
+                <span>{data.coordX}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#3a3f47]">Y</span>
+                <span>{data.coordY}</span>
+              </div>
+            </div>
+
+            {/* Bottom-Right: Status Chip */}
+            <div className="absolute bottom-3 sm:bottom-5 right-3 sm:right-6 z-20 pointer-events-none bg-[#f4ebd7]/95 backdrop-blur-[2px] border border-[#292929]/30 px-2.5 py-1 rounded-[2px] shadow-xs text-[10px] sm:text-xs font-mono font-bold tracking-wider text-[#124ead] flex items-center gap-1.5 uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500] animate-ping" />
+              <span>{data.statusChip}</span>
+            </div>
           </div>
         </div>
 
@@ -251,14 +252,11 @@ function FeatureSectionItem({
         {/* 2. DRAFTING SHEET FRAME & TOP METADATA */}
         {/* =================================================================== */}
         <div className="relative w-full z-30 flex items-center justify-between pt-3 px-4 sm:px-8 md:px-12 text-[10px] sm:text-xs font-mono text-[#5c6470] tracking-wider pointer-events-none">
-          <div className="flex items-center gap-3 bg-[#f4ebd7]/90 px-2 py-0.5 rounded-[2px] backdrop-blur-[2px] border border-[#292929]/20">
-            <span className="font-bold text-[#124ead]">{data.sheetNumber}</span>
-            <span className="hidden sm:inline-block text-[#292929]/40">//</span>
-            <span className="hidden sm:inline-block uppercase">{data.technicalLabel}</span>
+          <div className="flex items-center gap-3 bg-[#f4ebd7]/90 px-2 sm:px-2.5 py-0.5 rounded-[2px] backdrop-blur-[2px] border border-[#292929]/20">
+            <span className="font-bold text-[#124ead]">{data.sheetLabel}</span>
           </div>
-          <div className="flex items-center gap-2 bg-[#f4ebd7]/90 px-2 py-0.5 rounded-[2px] backdrop-blur-[2px] border border-[#292929]/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#124ead] animate-ping" />
-            <span className="font-mono text-[#292929]">{data.stageNum} OF 5</span>
+          <div className="flex items-center gap-2 bg-[#f4ebd7]/90 px-2.5 py-0.5 rounded-[2px] backdrop-blur-[2px] border border-[#292929]/20 font-handwriting text-xs sm:text-sm text-[#4a5260] tracking-wider uppercase font-bold">
+            BUILT FOR THE FACTORY FLOOR
           </div>
         </div>
 
@@ -297,7 +295,13 @@ function FeatureSectionItem({
             <div className="relative mb-4 sm:mb-5">
               {/* Bottom Layer: Outlined text via -webkit-text-stroke */}
               <h2 className="text-stroke-outline text-4xl sm:text-5xl lg:text-[3.8rem] xl:text-[4.4rem] font-bold tracking-tight leading-[1.0] select-text">
-                {data.headline}
+                {line1}
+                {line2 && (
+                  <>
+                    <br />
+                    {line2}
+                  </>
+                )}
               </h2>
 
               {/* Top Layer: Solid black (#212121) overlaid with animated clip-path */}
@@ -314,7 +318,13 @@ function FeatureSectionItem({
                 }}
                 aria-hidden="true"
               >
-                {data.headline}
+                {line1}
+                {line2 && (
+                  <>
+                    <br />
+                    {line2}
+                  </>
+                )}
               </h2>
             </div>
 
@@ -337,7 +347,7 @@ function FeatureSectionItem({
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               {/* Illoca-Style Modal Button */}
               <button
-                onClick={() => onOpenDemo(data.headline)}
+                onClick={() => onOpenDemo(data.headline.replace(" / ", " "))}
                 className="group h-12 inline-flex rounded-[3px] overflow-hidden border border-[#A19D94] shadow-sm hover:shadow transition-all active:scale-[0.98] cursor-pointer"
                 style={{
                   opacity: prefersReducedMotion || isVisible ? 1 : 0,
@@ -475,14 +485,14 @@ function DemoModal({
 }
 
 // =========================================================================
-// EXPORTED CONTAINER WITH ALL 5 FEATURE WORKFLOW SECTIONS
+// EXPORTED CONTAINER WITH ALL 3 FEATURE WORKFLOW SECTIONS
 // =========================================================================
 export function FeatureWorkflowSections() {
   const [activeModalTitle, setActiveModalTitle] = useState<string | null>(null);
 
   return (
     <div className="relative w-full z-20 bg-[#f4ebd7]">
-      {/* 5 Sequential Pinned Feature Sections */}
+      {/* 3 Sequential Pinned Feature Sections */}
       {SECTIONS_DATA.map((section) => (
         <FeatureSectionItem
           key={section.id}
