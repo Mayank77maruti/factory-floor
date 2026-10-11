@@ -14,11 +14,23 @@ import Link from "next/link";
  *   expanding and gliding outward cleanly as scroll progresses.
  * - Fully reversible upon scrolling upward.
  */
+const ROTATING_WORDS = [
+  { text: "work", bg: "#1E43D8", color: "#FFFFFF" },
+  { text: "fixing", bg: "#FF6B2C", color: "#FFFFFF" },
+  { text: "planning", bg: "#3E6BE0", color: "#FFFFFF" },
+  { text: "action", bg: "#FFC53D", color: "#101418" },
+];
+
 export function ExploreFrontlineMode() {
   const containerRef = useRef<HTMLElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(1440);
+
+  // Rotating Word State (mirrors frontline chat page text rotation)
+  const [wordIndex, setWordIndex] = useState(0);
+  const [pillWidth, setPillWidth] = useState<number | undefined>(undefined);
+  const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   // Check user preference for reduced motion and screen width
   useEffect(() => {
@@ -38,6 +50,34 @@ export function ExploreFrontlineMode() {
       };
     }
   }, []);
+
+  // Measure word widths and update pill width for rotating headline
+  useEffect(() => {
+    const updateWidth = () => {
+      const activeSpan = wordRefs.current[wordIndex];
+      if (activeSpan) {
+        setPillWidth(activeSpan.offsetWidth + 28);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    if (typeof document !== "undefined" && document.fonts) {
+      document.fonts.ready.then(updateWidth);
+    }
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [wordIndex]);
+
+  // Rotate words every 1800ms
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+
+    const interval = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+    }, 1800);
+
+    return () => clearInterval(interval);
+  }, [prefersReducedMotion]);
 
   // Scrub scroll progress deterministically between 0.0 and 1.0
   useEffect(() => {
@@ -94,12 +134,12 @@ export function ExploreFrontlineMode() {
 
   // Responsive spread scale multiplier for horizontal card offsets
   const spreadScale = useMemo(() => {
-    if (viewportWidth < 640) return 0.44;
-    if (viewportWidth < 768) return 0.60;
-    if (viewportWidth < 1024) return 0.78;
-    if (viewportWidth < 1280) return 0.92;
-    if (viewportWidth < 1536) return 1.02;
-    return 1.15; // wide screen (1920px+)
+    if (viewportWidth < 640) return 0.50;
+    if (viewportWidth < 768) return 0.65;
+    if (viewportWidth < 1024) return 0.82;
+    if (viewportWidth < 1280) return 0.94;
+    if (viewportWidth < 1536) return 1.05;
+    return 1.18; // wide screen (1920px+)
   }, [viewportWidth]);
 
   // =========================================================================
@@ -124,33 +164,33 @@ export function ExploreFrontlineMode() {
 
   // 1. Card Upper-Left: Connected Systems (Emerges ↖ from her tablet)
   const c1 = calcEmergence(0.10, 0.42);
-  const c1X = c1.t * -460 * spreadScale;
-  const c1Y = c1.t * -190 * spreadScale;
+  const c1X = c1.t * -490 * spreadScale;
+  const c1Y = c1.t * -215 * spreadScale;
 
-  // 2. Card Middle-Left: Files & Drawings (Emerges ◄ directly left from her)
+  // 2. Card Middle-Left: Active Issues & Drift (Emerges ◄ directly left from her)
   const c2 = calcEmergence(0.20, 0.52);
-  const c2X = c2.t * -500 * spreadScale;
-  const c2Y = c2.t * -10 * spreadScale;
+  const c2X = c2.t * -535 * spreadScale;
+  const c2Y = c2.t * -28 * spreadScale;
 
   // 3. Card Lower-Left: Copilot Dialog (Emerges ↙ down-left from her)
   const c3 = calcEmergence(0.28, 0.62);
-  const c3X = c3.t * -460 * spreadScale;
-  const c3Y = c3.t * 180 * spreadScale;
+  const c3X = c3.t * -490 * spreadScale;
+  const c3Y = c3.t * 208 * spreadScale;
 
   // 4. Card Upper-Right: Docs & SOP Checklist (Emerges ↗ from her tablet)
   const c4 = calcEmergence(0.12, 0.44);
-  const c4X = c4.t * 460 * spreadScale;
-  const c4Y = c4.t * -190 * spreadScale;
+  const c4X = c4.t * 490 * spreadScale;
+  const c4Y = c4.t * -215 * spreadScale;
 
   // 5. Card Middle-Right: Data Records & Telemetry (Emerges ► directly right from her)
   const c5 = calcEmergence(0.22, 0.54);
-  const c5X = c5.t * 500 * spreadScale;
-  const c5Y = c5.t * -10 * spreadScale;
+  const c5X = c5.t * 535 * spreadScale;
+  const c5Y = c5.t * -25 * spreadScale;
 
   // 6. Card Lower-Right: Operational Updates (Emerges ↘ down-right from her)
   const c6 = calcEmergence(0.30, 0.64);
-  const c6X = c6.t * 460 * spreadScale;
-  const c6Y = c6.t * 180 * spreadScale;
+  const c6X = c6.t * 490 * spreadScale;
+  const c6Y = c6.t * 208 * spreadScale;
 
   // Connecting SVG lines opacity (fades in as cards expand outward)
   const linesOpacity = useMemo(() => {
@@ -158,12 +198,6 @@ export function ExploreFrontlineMode() {
     if (p < 0.48) return (p - 0.30) / 0.18;
     if (p < 0.88) return 0.55;
     return Math.max(0, 0.55 * (1 - (p - 0.88) / 0.12));
-  }, [p]);
-
-  // Headline crossfade: Stage A/B ("Intelligence where work happens") -> Stage E ("Your people. Better decisions.")
-  const headlinePhase = useMemo(() => {
-    if (p < 0.65) return "intro";
-    return "conclusion";
   }, [p]);
 
   return (
@@ -179,16 +213,86 @@ export function ExploreFrontlineMode() {
         {/* EDITORIAL HEADLINE                                                  */}
         {/* =================================================================== */}
         <div className="relative w-full max-w-5xl mx-auto text-center z-30 pt-16 sm:pt-20 lg:pt-22 pb-2 px-4">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.6rem] font-bold tracking-tight text-[#101418] leading-[1.08] transition-all duration-500">
-            {headlinePhase === "intro" ? (
-              <>
-                Intelligence where the <span className="text-[#1E43D8]">work happens.</span>
-              </>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.6rem] font-bold tracking-tight text-[#101418] leading-[1.08] select-none">
+            Intelligence where the{" "}
+            {prefersReducedMotion ? (
+              <span
+                className="inline-block px-3 py-0.5 rounded-[10px] border-2 border-[#101418] align-bottom"
+                style={{
+                  backgroundColor: ROTATING_WORDS[0].bg,
+                  color: ROTATING_WORDS[0].color,
+                }}
+              >
+                <span>{ROTATING_WORDS[0].text}</span>
+              </span>
             ) : (
-              <>
-                Your people. Better decisions. <span className="text-[#1E43D8]">Right on the frontline.</span>
-              </>
+              <span
+                aria-hidden="true"
+                className="inline-block relative rounded-[10px] border-2 border-[#101418] transition-[width,background-color,color] duration-700 ease-in-out align-bottom"
+                style={{
+                  height: "1.22em",
+                  verticalAlign: "bottom",
+                  width: pillWidth ? `${pillWidth}px` : "auto",
+                  minWidth: "2.2em",
+                  backgroundColor: ROTATING_WORDS[wordIndex].bg,
+                  color: ROTATING_WORDS[wordIndex].color,
+                }}
+              >
+                {/* Hidden measuring spans */}
+                <span
+                  className="invisible absolute top-0 left-0 pointer-events-none select-none"
+                  aria-hidden="true"
+                >
+                  {ROTATING_WORDS.map((w, i) => (
+                    <span
+                      key={`measure-${w.text}`}
+                      ref={(el) => {
+                        wordRefs.current[i] = el;
+                      }}
+                      className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-[2.6rem] tracking-tight whitespace-nowrap inline-block"
+                    >
+                      {w.text}
+                    </span>
+                  ))}
+                </span>
+
+                {/* Rotating Word Sliders */}
+                {ROTATING_WORDS.map((w, i) => {
+                  const isCurrent = i === wordIndex;
+                  const isNext = i === (wordIndex + 1) % ROTATING_WORDS.length;
+
+                  let transform = "translate(-50%, -105%)";
+                  let opacity = 0;
+
+                  if (isCurrent) {
+                    transform = "translate(-50%, 0)";
+                    opacity = 1;
+                  } else if (isNext) {
+                    transform = "translate(-50%, 105%)";
+                    opacity = 0;
+                  }
+
+                  return (
+                    <span
+                      key={w.text}
+                      className="absolute left-1/2 whitespace-nowrap pointer-events-none select-none transition-transform duration-700 ease-in-out"
+                      style={{
+                        transform,
+                        opacity,
+                        transitionProperty: "transform, opacity",
+                        transitionDuration: "0.7s, 0.25s",
+                        transitionDelay: isCurrent ? "0s, 0.25s" : "0s, 0s",
+                        lineHeight: "1.18em",
+                        bottom: "0.02em",
+                      }}
+                    >
+                      {w.text}
+                    </span>
+                  );
+                })}
+              </span>
             )}
+            {" "}happens.
           </h2>
         </div>
 
@@ -245,37 +349,47 @@ export function ExploreFrontlineMode() {
               pointerEvents: c1.t > 0.4 ? "auto" : "none",
             }}
           >
-            <div className="w-[210px] sm:w-[240px] xl:w-[260px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[8px] p-2.5 sm:p-3 shadow-[3px_3px_0_#101418] hover:translate-x-0.5 transition-transform text-left">
-              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-1 mb-2 font-mono text-[9px]">
-                <span className="font-bold text-[#ff5500] flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
+            <div className="w-[270px] sm:w-[315px] md:w-[335px] xl:w-[365px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[10px] p-3.5 sm:p-4 shadow-[4px_4px_0_#101418] hover:shadow-[6px_6px_0_#101418] hover:-translate-y-0.5 transition-all text-left">
+              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-2 mb-2.5 font-mono text-[10px] sm:text-[11px]">
+                <span className="font-bold text-[#ff5500] flex items-center gap-2 uppercase tracking-wider">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff5500] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ff5500]" />
+                  </span>
                   CONNECTED SYSTEMS
                 </span>
-                <span className="text-[#16A34A] font-bold">24 NODES</span>
+                <span className="bg-[#DCFCE7] text-[#15803D] font-bold px-2 py-0.5 rounded-[4px] border border-[#16A34A]/30 text-[9.5px] sm:text-[10px] flex items-center gap-1">
+                  ● 24 NODES ONLINE
+                </span>
               </div>
               
-              <div className="flex items-center gap-1.5 py-0.5">
-                <div className="px-2 py-1 rounded-[3px] bg-[#1E43D8] font-mono font-bold text-white text-[9.5px]">
+              <div className="flex items-center gap-2 py-1">
+                <div className="px-2.5 py-1 rounded-[4px] bg-[#1E43D8] font-mono font-bold text-white text-[10px] sm:text-[11px] shadow-[1px_1px_0_#101418] flex items-center gap-1">
                   VERTEX AI
                 </div>
-                <div className="px-2 py-1 rounded-[3px] bg-[#ff5500] font-mono font-bold text-white text-[9.5px]">
+                <div className="px-2.5 py-1 rounded-[4px] bg-[#ff5500] font-mono font-bold text-white text-[10px] sm:text-[11px] shadow-[1px_1px_0_#101418] flex items-center gap-1">
                   FANUC CNC
                 </div>
-                <div className="px-2 py-1 rounded-[3px] bg-[#16A34A] font-mono font-bold text-white text-[9.5px]">
+                <div className="px-2.5 py-1 rounded-[4px] bg-[#16A34A] font-mono font-bold text-white text-[10px] sm:text-[11px] shadow-[1px_1px_0_#101418] flex items-center gap-1">
                   SCADA
                 </div>
-                <div className="px-1.5 py-1 rounded-[3px] bg-[#101418] font-mono font-bold text-white text-[9px]">
+                <div className="px-2 py-1 rounded-[4px] bg-[#101418] font-mono font-bold text-white text-[9.5px] sm:text-[10.5px] shadow-[1px_1px_0_#101418]">
                   +18
                 </div>
               </div>
-              <div className="text-[9px] font-mono text-[#5c6470] mt-1.5">
-                Low-latency edge telemetry bus synchronized
+
+              <div className="border-t border-[#101418]/10 pt-2 mt-2 flex items-center justify-between text-[9.5px] sm:text-[10px] font-mono text-[#5c6470]">
+                <span>Low-latency edge bus synchronized</span>
+                <span className="text-[#15803D] font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                  4.2 ms
+                </span>
               </div>
             </div>
           </div>
 
           {/* ----------------------------------------------------------------- */}
-          {/* CARD 2: MIDDLE-LEFT — FILES & ENGINEERING SPECS                   */}
+          {/* CARD 2: MIDDLE-LEFT — ACTIVE ISSUES & DRIFT MONITORING            */}
           {/* ----------------------------------------------------------------- */}
           <div
             className="absolute left-1/2 top-1/2 z-20 pointer-events-none transition-transform duration-75"
@@ -285,26 +399,65 @@ export function ExploreFrontlineMode() {
               pointerEvents: c2.t > 0.4 ? "auto" : "none",
             }}
           >
-            <div className="w-[220px] sm:w-[250px] xl:w-[270px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[8px] p-2.5 sm:p-3 shadow-[3px_3px_0_#101418] hover:translate-x-0.5 transition-transform text-left">
-              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-1 mb-2 font-mono text-[9px]">
-                <span className="font-bold text-[#101418] flex items-center gap-1">
-                  <span>📁</span> ACTIVE DRAWINGS &amp; SPECS
+            <div className="w-[280px] sm:w-[330px] md:w-[355px] xl:w-[385px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[10px] p-3.5 sm:p-4 shadow-[4px_4px_0_#101418] hover:shadow-[6px_6px_0_#101418] hover:-translate-y-0.5 transition-all text-left">
+              {/* Card Header */}
+              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-2 mb-2 font-mono text-[10px] sm:text-[11px]">
+                <span className="font-bold text-[#101418] flex items-center gap-1.5 uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#D92D20] animate-ping" />
+                  ACTIVE ISSUES &amp; DRIFT
                 </span>
-                <span className="text-[#1E43D8] font-bold">REV C</span>
+                <span className="bg-[#FEE4E2] text-[#D92D20] font-bold px-2 py-0.5 rounded-[4px] border border-[#D92D20]/30 text-[9px] sm:text-[10px]">
+                  2 UNREPORTED
+                </span>
               </div>
-              <div className="space-y-1.5 font-mono text-[9px] sm:text-[9.5px]">
-                <div className="flex items-center justify-between bg-[#F6EFDB] p-1.5 rounded-[3px] border border-[#101418]/15">
-                  <span className="truncate text-[#101418] font-semibold">spindle_runout_spec_v2.dxf</span>
-                  <span className="text-[#16A34A] font-bold shrink-0 text-[8.5px]">✓ ASME</span>
+
+              {/* Frontline Chat Context Trigger */}
+              <div className="flex items-center justify-between bg-[#101418]/5 px-2.5 py-1 rounded-[5px] border border-[#101418]/10 mb-2 font-mono text-[9px] sm:text-[10px]">
+                <div className="flex items-center gap-1.5 truncate text-[#101418]">
+                  <span className="text-[#1E43D8] font-bold shrink-0">Q:</span>
+                  <span className="italic truncate font-medium">“Any equipment drifting?”</span>
                 </div>
-                <div className="flex items-center justify-between bg-[#F6EFDB] p-1.5 rounded-[3px] border border-[#101418]/15">
-                  <span className="truncate text-[#101418] font-semibold">asme_y14.5_tolerance.pdf</span>
-                  <span className="text-[#1E43D8] font-bold shrink-0 text-[8.5px]">GD&amp;T</span>
+                <span className="text-[#D92D20] font-bold text-[8.5px] sm:text-[9px] shrink-0 ml-1.5 bg-[#FEE4E2] px-1.5 py-0.5 rounded border border-[#D92D20]/25">
+                  ● FLAGGED
+                </span>
+              </div>
+
+              {/* Active Drift Issues List */}
+              <div className="space-y-2 font-mono text-[9.5px] sm:text-[10.5px]">
+                {/* Issue 1: Press 3 Thermal Drift */}
+                <div className="bg-[#F6EFDB] hover:bg-[#F2E7CD] p-2.5 rounded-[6px] border border-[#101418]/15 transition-colors">
+                  <div className="flex items-center justify-between font-bold text-[#101418]">
+                    <span>Press 3 · Line 2</span>
+                    <span className="bg-[#FEE4E2] text-[#D92D20] text-[8.5px] sm:text-[9px] px-1.5 py-0.5 rounded border border-[#D92D20]/30">
+                      +13° DRIFT
+                    </span>
+                  </div>
+                  <div className="text-[9px] sm:text-[9.5px] text-[#5c6470] mt-1 leading-snug">
+                    Hydraulic temp over spec · W-3318 (Started 09:12)
+                  </div>
                 </div>
-                <div className="flex items-center justify-between bg-[#F6EFDB] p-1.5 rounded-[3px] border border-[#101418]/15">
-                  <span className="truncate text-[#101418] font-semibold">unit04_vibration_logs.csv</span>
-                  <span className="text-[#ff5500] font-bold shrink-0 text-[8.5px]">LIVE</span>
+
+                {/* Issue 2: Engine Line 2 Bracket Loosening */}
+                <div className="bg-[#F6EFDB] hover:bg-[#F2E7CD] p-2.5 rounded-[6px] border border-[#101418]/15 transition-colors">
+                  <div className="flex items-center justify-between font-bold text-[#101418]">
+                    <span>Engine Line 2</span>
+                    <span className="bg-[#FFEDD5] text-[#C2410C] text-[8.5px] sm:text-[9px] px-1.5 py-0.5 rounded border border-[#ff5500]/30">
+                      BOLTS LOOSE
+                    </span>
+                  </div>
+                  <div className="text-[9px] sm:text-[9.5px] text-[#5c6470] mt-1 leading-snug">
+                    Torque 6 bolts to 45 N·m · W-3321 (Due 14:00)
+                  </div>
                 </div>
+              </div>
+
+              {/* Bottom status footer */}
+              <div className="border-t border-[#101418]/10 pt-2 mt-2 flex items-center justify-between text-[9.5px] sm:text-[10px] font-mono text-[#5c6470]">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
+                  Immediate inspection required
+                </span>
+                <span className="text-[#D92D20] font-bold">2 ALERTS</span>
               </div>
             </div>
           </div>
@@ -320,29 +473,33 @@ export function ExploreFrontlineMode() {
               pointerEvents: c3.t > 0.4 ? "auto" : "none",
             }}
           >
-            <div className="w-[220px] sm:w-[260px] xl:w-[280px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[8px] p-2.5 sm:p-3 shadow-[3px_3px_0_#101418] hover:translate-x-0.5 transition-transform text-left">
-              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-1 mb-2 font-mono text-[9px]">
-                <span className="font-bold text-[#1E43D8] flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-ping" />
+            <div className="w-[280px] sm:w-[330px] md:w-[355px] xl:w-[385px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[10px] p-3.5 sm:p-4 shadow-[4px_4px_0_#101418] hover:shadow-[6px_6px_0_#101418] hover:-translate-y-0.5 transition-all text-left">
+              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-2 mb-2.5 font-mono text-[10px] sm:text-[11px]">
+                <span className="font-bold text-[#1E43D8] flex items-center gap-2 uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-ping" />
                   FRONTLINE COPILOT
                 </span>
-                <span className="text-[#5c6470]">10:14 AM</span>
+                <span className="text-[#5c6470] bg-[#101418]/5 px-2 py-0.5 rounded border border-[#101418]/10 text-[9.5px] sm:text-[10px]">
+                  10:14 AM // SHIFT 1
+                </span>
               </div>
 
-              <div className="bg-[#F6EFDB] border border-[#101418]/15 rounded-[4px] p-1.5 mb-1.5">
-                <div className="font-mono text-[8.5px] font-bold text-[#101418] mb-0.5">
-                  Elena (Frontline Tech)
+              <div className="bg-[#F6EFDB] border border-[#101418]/15 rounded-[6px] p-2.5 mb-2">
+                <div className="flex items-center justify-between font-mono text-[9.5px] sm:text-[10px] font-bold text-[#101418] mb-1">
+                  <span>👤 Elena (Frontline Tech)</span>
+                  <span className="text-[#5c6470] font-normal text-[8.5px]">CNC Bay 4</span>
                 </div>
-                <div className="text-[10px] text-[#101418] leading-tight">
+                <div className="text-[10.5px] sm:text-[11.5px] text-[#101418] font-mono leading-snug">
                   “Spindle vibration on Unit 04 drifted +0.018 mm above baseline.”
                 </div>
               </div>
 
-              <div className="bg-[#1E43D8]/10 border border-[#1E43D8]/30 rounded-[4px] p-1.5">
-                <div className="font-mono text-[8.5px] font-bold text-[#1E43D8] mb-0.5">
-                  Manufy Copilot
+              <div className="bg-[#1E43D8]/8 border border-[#1E43D8]/25 rounded-[6px] p-2.5">
+                <div className="flex items-center justify-between font-mono text-[9.5px] sm:text-[10px] font-bold text-[#1E43D8] mb-1">
+                  <span>⚡ Manufy Copilot</span>
+                  <span className="text-[#1E43D8]/70 font-normal text-[8.5px]">AI Agent</span>
                 </div>
-                <div className="text-[10px] text-[#101418] leading-tight">
+                <div className="text-[10.5px] sm:text-[11.5px] text-[#101418] font-mono leading-snug">
                   “Matched past record W-3318. Bearing preload check recommended below.”
                 </div>
               </div>
@@ -360,29 +517,32 @@ export function ExploreFrontlineMode() {
               pointerEvents: c4.t > 0.4 ? "auto" : "none",
             }}
           >
-            <div className="w-[210px] sm:w-[250px] xl:w-[270px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[8px] p-2.5 sm:p-3 shadow-[3px_3px_0_#101418] hover:translate-x-0.5 transition-transform text-left">
-              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-1 mb-2 font-mono text-[9px]">
-                <span className="font-bold text-[#101418] flex items-center gap-1">
+            <div className="w-[270px] sm:w-[320px] md:w-[340px] xl:w-[370px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[10px] p-3.5 sm:p-4 shadow-[4px_4px_0_#101418] hover:shadow-[6px_6px_0_#101418] hover:-translate-y-0.5 transition-all text-left">
+              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-2 mb-2.5 font-mono text-[10px] sm:text-[11px]">
+                <span className="font-bold text-[#101418] flex items-center gap-1.5 uppercase tracking-wider">
                   <span>📄</span> SOP PROCEDURE
                 </span>
-                <span className="font-bold text-[#16A34A]">SOP #402 VERIFIED</span>
+                <span className="bg-[#DCFCE7] text-[#15803D] font-bold px-2 py-0.5 rounded-[4px] border border-[#16A34A]/30 text-[9.5px] sm:text-[10px]">
+                  ✓ SOP #402 VERIFIED
+                </span>
               </div>
 
-              <div className="font-mono text-[10px] font-bold text-[#101418] mb-1">
-                Spindle Maintenance Protocol
+              <div className="flex items-center justify-between font-mono text-[11px] sm:text-[12px] font-bold text-[#101418] mb-2">
+                <span>Spindle Maintenance Protocol</span>
+                <span className="text-[9px] text-[#5c6470] font-normal">Step 2 of 3</span>
               </div>
 
-              <div className="space-y-1 font-mono text-[9px] sm:text-[9.5px] text-[#424a56]">
-                <div className="flex items-center gap-1.5 text-[#101418]">
-                  <span className="text-[#16A34A] font-bold">☑</span>
+              <div className="space-y-1.5 font-mono text-[10px] sm:text-[11px]">
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded-[4px] bg-[#DCFCE7]/40 border border-[#16A34A]/20 text-[#15803D] font-semibold">
+                  <span className="text-[#16A34A] font-bold text-xs">☑</span>
                   <span>Verify spindle runout ≤ 0.004 mm</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[#101418]">
-                  <span className="text-[#16A34A] font-bold">☑</span>
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded-[4px] bg-[#DCFCE7]/40 border border-[#16A34A]/20 text-[#15803D] font-semibold">
+                  <span className="text-[#16A34A] font-bold text-xs">☑</span>
                   <span>Check hydraulic temp (&lt;55°C)</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[#1E43D8] font-bold">
-                  <span>☐</span>
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded-[4px] bg-[#E8EEFC] border border-[#1E43D8]/25 text-[#1E43D8] font-bold">
+                  <span className="text-[#1E43D8] font-bold text-xs">☐</span>
                   <span>Torque flange to 42 N·m (ASME)</span>
                 </div>
               </div>
@@ -400,28 +560,38 @@ export function ExploreFrontlineMode() {
               pointerEvents: c5.t > 0.4 ? "auto" : "none",
             }}
           >
-            <div className="w-[210px] sm:w-[245px] xl:w-[265px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[8px] p-2.5 sm:p-3 shadow-[3px_3px_0_#101418] hover:translate-x-0.5 transition-transform text-left">
-              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-1 mb-2 font-mono text-[9px]">
-                <span className="font-bold text-[#101418] flex items-center gap-1">
+            <div className="w-[270px] sm:w-[320px] md:w-[345px] xl:w-[375px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[10px] p-3.5 sm:p-4 shadow-[4px_4px_0_#101418] hover:shadow-[6px_6px_0_#101418] hover:-translate-y-0.5 transition-all text-left">
+              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-2 mb-2.5 font-mono text-[10px] sm:text-[11px]">
+                <span className="font-bold text-[#101418] flex items-center gap-1.5 uppercase tracking-wider">
                   <span>📊</span> DATA RECORDS
                 </span>
-                <span className="text-[#ff5500] font-bold">LIVE TELEMETRY</span>
+                <span className="bg-[#FFEDD5] text-[#C2410C] font-bold px-2 py-0.5 rounded-[4px] border border-[#ff5500]/30 text-[9.5px] sm:text-[10px] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500] animate-pulse" />
+                  LIVE TELEMETRY
+                </span>
               </div>
 
-              <div className="bg-[#F6EFDB] border border-[#101418]/15 rounded-[4px] p-2 mb-1">
-                <div className="flex items-center justify-between font-mono text-[9px] text-[#5c6470]">
-                  <span>Unit 04 Spindle Drift</span>
-                  <span className="font-bold text-[#ff5500]">4.8 mm/s [DRIFT]</span>
+              <div className="bg-[#F6EFDB] border border-[#101418]/15 rounded-[6px] p-2.5 sm:p-3 mb-2 space-y-2">
+                <div className="flex items-center justify-between font-mono text-[10px] sm:text-[11px]">
+                  <span className="text-[#5c6470] font-medium">Unit 04 Spindle Drift</span>
+                  <span className="font-bold text-[#C2410C] bg-[#FFEDD5] px-1.5 py-0.5 rounded border border-[#ff5500]/25">
+                    4.8 mm/s [DRIFT]
+                  </span>
                 </div>
-                <div className="flex items-center justify-between font-mono text-[9px] text-[#5c6470] mt-1">
-                  <span>Process Cpk Index</span>
-                  <span className="font-bold text-[#16A34A]">1.82 6σ [NOMINAL]</span>
+                <div className="flex items-center justify-between font-mono text-[10px] sm:text-[11px]">
+                  <span className="text-[#5c6470] font-medium">Process Cpk Index</span>
+                  <span className="font-bold text-[#15803D] bg-[#DCFCE7] px-1.5 py-0.5 rounded border border-[#16A34A]/25">
+                    1.82 6σ [NOMINAL]
+                  </span>
                 </div>
               </div>
 
-              <div className="font-mono text-[8.5px] text-[#16A34A] font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                <span>Bearing acoustic profile matching baseline</span>
+              <div className="font-mono text-[9.5px] sm:text-[10px] text-[#15803D] font-bold flex items-center justify-between pt-0.5">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                  Bearing acoustic profile matching baseline
+                </span>
+                <span className="text-[#5c6470] font-normal text-[8.5px]">99.4%</span>
               </div>
             </div>
           </div>
@@ -437,31 +607,39 @@ export function ExploreFrontlineMode() {
               pointerEvents: c6.t > 0.4 ? "auto" : "none",
             }}
           >
-            <div className="w-[220px] sm:w-[255px] xl:w-[275px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[8px] p-2.5 sm:p-3 shadow-[3px_3px_0_#101418] hover:translate-x-0.5 transition-transform text-left">
-              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-1 mb-2 font-mono text-[9px]">
-                <span className="font-bold text-[#101418] flex items-center gap-1">
+            <div className="w-[280px] sm:w-[330px] md:w-[355px] xl:w-[385px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[10px] p-3.5 sm:p-4 shadow-[4px_4px_0_#101418] hover:shadow-[6px_6px_0_#101418] hover:-translate-y-0.5 transition-all text-left">
+              <div className="flex items-center justify-between border-b border-[#101418]/15 pb-2 mb-2.5 font-mono text-[10px] sm:text-[11px]">
+                <span className="font-bold text-[#101418] flex items-center gap-1.5 uppercase tracking-wider">
                   <span>🔔</span> UPDATES &amp; DISPATCH
                 </span>
-                <span className="text-[#16A34A] font-bold">TICKET W-3318</span>
+                <span className="bg-[#DCFCE7] text-[#15803D] font-bold px-2 py-0.5 rounded-[4px] border border-[#16A34A]/30 text-[9.5px] sm:text-[10px]">
+                  TICKET W-3318
+                </span>
               </div>
 
-              <div className="flex items-start gap-2 mb-1.5">
-                <div className="w-6 h-6 rounded-full bg-[#1E43D8] text-white flex items-center justify-center font-mono text-[8.5px] font-bold shrink-0 mt-0.5">
+              <div className="flex items-start gap-2.5 bg-[#F6EFDB] border border-[#101418]/15 rounded-[6px] p-2.5 mb-2.5">
+                <div className="w-7 h-7 rounded-full bg-[#1E43D8] text-white flex items-center justify-center font-mono text-[10px] font-bold shrink-0 shadow-sm border border-[#101418]/20 mt-0.5">
                   DS
                 </div>
                 <div>
-                  <div className="font-mono text-[9px] font-bold text-[#101418]">
-                    Devin (Shift Lead)
+                  <div className="flex items-center gap-2 font-mono text-[9.5px] sm:text-[10px] font-bold text-[#101418]">
+                    <span>Devin (Shift Lead)</span>
+                    <span className="text-[8.5px] text-[#5c6470] font-normal">10:18 AM</span>
                   </div>
-                  <div className="text-[10px] text-[#424a56] leading-tight">
+                  <div className="text-[10.5px] sm:text-[11.5px] text-[#333a44] font-mono leading-snug mt-0.5">
                     Bearing replacement approved. Tool Crib B parts staged for shift change.
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-[#101418]/10 pt-1 font-mono text-[8.5px] text-[#5c6470]">
-                <span className="hover:text-[#101418] cursor-pointer">👍 Acknowledged</span>
-                <span className="text-[#16A34A] font-bold">DISPATCH READY</span>
+              <div className="flex items-center justify-between border-t border-[#101418]/10 pt-2 font-mono text-[9.5px] sm:text-[10px]">
+                <span className="text-[#5c6470] hover:text-[#101418] cursor-pointer flex items-center gap-1">
+                  👍 Acknowledged by Elena
+                </span>
+                <span className="bg-[#DCFCE7] text-[#15803D] font-bold px-2 py-0.5 rounded border border-[#16A34A]/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                  DISPATCH READY
+                </span>
               </div>
             </div>
           </div>
@@ -490,7 +668,7 @@ export function ExploreFrontlineMode() {
             />
 
             {/* Anchored Identity Badge */}
-            <div className="relative -mt-5 z-40 bg-[#FFFBF0]/95 border-[1.5px] border-[#101418] rounded-[5px] px-3 py-1.5 shadow-[2px_2px_0_#101418] backdrop-blur-[2px] flex items-center gap-2.5 font-mono text-[9px] sm:text-[10px]">
+            <div className="relative -mt-5 z-40 bg-[#FFFBF0]/95 border-[1.5px] border-[#101418] rounded-[6px] px-3.5 sm:px-4 py-1.5 sm:py-2 shadow-[3px_3px_0_#101418] backdrop-blur-[2px] flex items-center gap-2.5 font-mono text-[9.5px] sm:text-[10.5px]">
               <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-ping" />
               <span className="font-bold text-[#101418]">ELENA R. // INDUSTRIAL OPERATIONS</span>
               <span className="text-[#101418]/30">|</span>

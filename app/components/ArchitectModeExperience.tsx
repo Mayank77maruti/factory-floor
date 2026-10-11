@@ -298,6 +298,17 @@ export function ArchitectModeExperience() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
+  // Tolerance Error Detection Visibility:
+  // After 2D blueprint is established (0.70 -> 0.82), highlight the tolerance error in one dimension (0.83 -> 1.00)
+  const errorProgress = useMemo(() => {
+    if (prefersReducedMotion) return 1;
+    if (scrollProgress < 0.82) return 0;
+    if (scrollProgress > 0.90) return 1;
+    return (scrollProgress - 0.82) / (0.90 - 0.82);
+  }, [scrollProgress, prefersReducedMotion]);
+
+  const isErrorState = errorProgress > 0.35;
+
   // ===========================================================================
   // 3. RENDER 3D CANVAS & TRANSFORMATION (Canvas 2D Graphics Loop)
   // ===========================================================================
@@ -560,28 +571,44 @@ export function ArchitectModeExperience() {
       ctx.lineTo(centerX + 150 * scale, centerY + 60 * scale);
       ctx.stroke();
 
+      // 6. Highlight bottom flange edge in alert red when tolerance error is active in 2D mode
+      if (blueprintMode > 0.6 && errorProgress > 0.1) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(217, 45, 32, ${errorProgress * 0.95})`;
+        ctx.lineWidth = 2.4;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(centerX - 110 * scale, centerY + 75 * scale);
+        ctx.lineTo(centerX + 110 * scale, centerY + 75 * scale);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       ctx.restore();
     }
-  }, [scrollProgress, dimensions, geometry, prefersReducedMotion]);
+  }, [scrollProgress, dimensions, geometry, prefersReducedMotion, errorProgress]);
 
   // Determine current active phase for UI indicators (3D -> 2D workflow)
   const currentPhaseIndex = useMemo(() => {
     if (scrollProgress < 0.25) return 0; // Phase 01: 3D CAD Solid
     if (scrollProgress < 0.48) return 1; // Phase 02: Feature Metrology
     if (scrollProgress < 0.72) return 2; // Phase 03: Orthographic Projection
-    return 3; // Phase 04: 2D Blueprint Sketch
+    if (scrollProgress < 0.83) return 3; // Phase 04: 2D Blueprint Sketch
+    return 4; // Phase 05: Dimension Tolerance Error Detection
   }, [scrollProgress]);
 
   // Floating Cards Parallax & Opacity Calculations:
-  // Visible during 3D solid inspection & feature metrology (0.10 -> 0.70), fade out as 2D blueprint settles
+  // Fade in at 0.10 and frame the canvas perimeter
   const cardsOpacity = useMemo(() => {
     if (scrollProgress < 0.10) return scrollProgress / 0.10;
-    if (scrollProgress < 0.68) return 1;
-    if (scrollProgress < 0.82) return Math.max(0, 1 - (scrollProgress - 0.68) / 0.14);
-    return 0;
+    return 1;
   }, [scrollProgress]);
 
-  const cardsDriftY = (scrollProgress - 0.5) * 35;
+  // Subtle parallax drift during 3D phases, settling firmly into corner docking for 2D mode
+  const cardsDriftY = useMemo(() => {
+    if (scrollProgress >= 0.70) return 0;
+    return (scrollProgress - 0.5) * 35;
+  }, [scrollProgress]);
 
   // Blueprint Dimension Annotations Visibility:
   // Draw progressively between 0.70 and 0.88 as 2D sketch establishes
@@ -603,11 +630,11 @@ export function ArchitectModeExperience() {
         {/* =================================================================== */}
         {/* TOP TECHNICAL DRAWING HEADER / SHEET FRAME METADATA                 */}
         {/* =================================================================== */}
-        <div className="relative w-full z-30 flex items-center justify-between pt-3 sm:pt-4 px-4 sm:px-8 md:px-12 text-[10px] sm:text-xs font-mono text-[#5c6470] tracking-wider pointer-events-none">
+        <div className="relative w-full z-30 flex items-center justify-between pt-16 sm:pt-20 lg:pt-22 pb-2 px-4 sm:px-8 md:px-12 text-[10px] sm:text-xs font-mono text-[#5c6470] tracking-wider pointer-events-none">
           <div className="flex items-center gap-2 sm:gap-3 bg-[#FFFBF0]/90 px-2.5 py-1 rounded-[3px] border border-[#101418]/20 shadow-[1px_1px_0_#101418]/15 backdrop-blur-[2px]">
             <span className="font-bold text-[#124ead]">SHT. M-01 // ARCHITECT MODE</span>
-            <span className="hidden sm:inline-block text-[#101418]/30">//</span>
-            <span className="hidden sm:inline-block uppercase text-[#101418]">
+            <span className="hidden md:inline-block text-[#101418]/30">//</span>
+            <span className="hidden md:inline-block uppercase text-[#101418]">
               3D CAD TO 2D BLUEPRINT SYNTHESIS &amp; ASME METROLOGY
             </span>
           </div>
@@ -619,7 +646,7 @@ export function ArchitectModeExperience() {
               {currentPhaseIndex === 0 && "PHASE 01: 3D CAD SOLID"}
               {currentPhaseIndex === 1 && "PHASE 02: FEATURE METROLOGY"}
               {currentPhaseIndex === 2 && "PHASE 03: ORTHOGRAPHIC PROJECTION"}
-              {currentPhaseIndex === 3 && "PHASE 04: 2D BLUEPRINT SKETCH"}
+              {currentPhaseIndex >= 3 && "PHASE 04: 2D BLUEPRINT SKETCH"}
             </span>
           </div>
         </div>
@@ -627,12 +654,12 @@ export function ArchitectModeExperience() {
         {/* =================================================================== */}
         {/* MAIN SPLIT VIEW: 60-65% VISUAL (LEFT) + 35-40% CONTENT (RIGHT)     */}
         {/* =================================================================== */}
-        <div className="relative w-full flex-1 flex flex-col lg:flex-row items-center justify-between px-3 sm:px-6 md:px-10 z-20 overflow-hidden">
+        <div className="relative w-full flex-1 flex flex-col lg:flex-row items-center justify-between px-3 sm:px-6 md:px-10 z-20 overflow-hidden my-auto">
           
           {/* ----------------------------------------------------------------- */}
           {/* LEFT: 60-65% VISUAL ARENA (3D Canvas + Dimension SVG + Cards)     */}
           {/* ----------------------------------------------------------------- */}
-          <div className="relative w-full lg:w-[62%] xl:w-[65%] h-[55vh] sm:h-[62vh] lg:h-[82vh] flex items-center justify-center">
+          <div className="relative w-full lg:w-[62%] xl:w-[65%] h-[52vh] sm:h-[60vh] lg:h-[76vh] flex items-center justify-center">
             
             {/* Draft Paper Background Card with Blueprint Grid */}
             <div className="absolute inset-2 sm:inset-4 rounded-xl border-2 border-[#101418] bg-[#F6EFDB] bg-drafting-grid shadow-[6px_6px_0_#101418] overflow-hidden flex items-center justify-center">
@@ -687,28 +714,141 @@ export function ArchitectModeExperience() {
                   >
                     <polygon points="6 0.5, 0 3, 6 5.5" fill="#124ead" />
                   </marker>
+                  {/* Alert Error Markers */}
+                  <marker
+                    id="blueprint-arrow-error"
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX="6"
+                    refY="3"
+                    orient="auto"
+                  >
+                    <polygon points="0 0.5, 6 3, 0 5.5" fill="#D92D20" />
+                  </marker>
+                  <marker
+                    id="blueprint-arrow-error-reverse"
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX="0"
+                    refY="3"
+                    orient="auto"
+                  >
+                    <polygon points="6 0.5, 0 3, 6 5.5" fill="#D92D20" />
+                  </marker>
                 </defs>
 
-                {/* Overall Width Dimension Bar: 148.00 ± 0.05 mm */}
-                <g className="font-mono text-[11px] text-[#124ead] font-bold">
+                {/* Overall Width Dimension Bar: Nominal 148.00 ± 0.05 mm -> Flags 148.18 mm Tolerance Error */}
+                <g className="font-mono text-[11px] font-bold transition-all duration-300">
                   {/* Extension lines */}
-                  <line x1="28%" y1="78%" x2="28%" y2="88%" stroke="#124ead" strokeWidth="1" strokeDasharray="3 3" />
-                  <line x1="68%" y1="78%" x2="68%" y2="88%" stroke="#124ead" strokeWidth="1" strokeDasharray="3 3" />
+                  <line
+                    x1="28%"
+                    y1="78%"
+                    x2="28%"
+                    y2="88%"
+                    stroke={errorProgress > 0.3 ? "#D92D20" : "#124ead"}
+                    strokeWidth={errorProgress > 0.3 ? "1.4" : "1"}
+                    strokeDasharray={errorProgress > 0.3 ? "none" : "3 3"}
+                  />
+                  <line
+                    x1="68%"
+                    y1="78%"
+                    x2="68%"
+                    y2="88%"
+                    stroke={errorProgress > 0.3 ? "#D92D20" : "#124ead"}
+                    strokeWidth={errorProgress > 0.3 ? "1.4" : "1"}
+                    strokeDasharray={errorProgress > 0.3 ? "none" : "3 3"}
+                  />
                   {/* Dimension line with arrows */}
                   <line
                     x1="28%"
                     y1="85%"
                     x2="68%"
                     y2="85%"
-                    stroke="#124ead"
-                    strokeWidth="1.4"
-                    markerStart="url(#blueprint-arrow-reverse)"
-                    markerEnd="url(#blueprint-arrow)"
+                    stroke={errorProgress > 0.3 ? "#D92D20" : "#124ead"}
+                    strokeWidth={errorProgress > 0.3 ? "1.8" : "1.4"}
+                    markerStart={errorProgress > 0.3 ? "url(#blueprint-arrow-error-reverse)" : "url(#blueprint-arrow-reverse)"}
+                    markerEnd={errorProgress > 0.3 ? "url(#blueprint-arrow-error)" : "url(#blueprint-arrow)"}
                   />
-                  <rect x="42%" y="82%" width="72" height="18" fill="#F6EFDB" rx="2" />
-                  <text x="48%" y="84.5%" textAnchor="middle" fill="#124ead" dominantBaseline="middle">
-                    148.00 ± 0.05 mm
-                  </text>
+
+                  {/* Dimension Measurement Label / Error Annotation Box */}
+                  {errorProgress > 0.3 ? (
+                    /* Metrology Dimension Error Annotation: 148.18 mm | +0.13 mm centered directly above line */
+                    <svg x="48%" y="85%" overflow="visible" className="transition-all duration-300">
+                      {/* Pale cream rounded rectangular box sitting entirely above the dimension line */}
+                      <rect
+                        x="-69"
+                        y="-28"
+                        width="138"
+                        height="22"
+                        fill="#FFFBF0"
+                        stroke="#D92D20"
+                        strokeWidth="1.2"
+                        rx="3"
+                      />
+                      {/* Subtle vertical divider between measurement and deviation */}
+                      <line
+                        x1="4"
+                        y1="-22"
+                        x2="4"
+                        y2="-12"
+                        stroke="#D92D20"
+                        strokeWidth="1"
+                        strokeOpacity="0.35"
+                      />
+                      {/* Measured value: 148.18 mm (prominent bold deep red) */}
+                      <text
+                        x="-2"
+                        y="-17"
+                        textAnchor="end"
+                        dominantBaseline="central"
+                        fill="#B42318"
+                        fontSize="10.5"
+                        fontWeight="700"
+                        className="font-mono tracking-tight"
+                      >
+                        148.18 mm
+                      </text>
+                      {/* Deviation value: +0.13 mm (semi-bold alert red) */}
+                      <text
+                        x="10"
+                        y="-17"
+                        textAnchor="start"
+                        dominantBaseline="central"
+                        fill="#D92D20"
+                        fontSize="10"
+                        fontWeight="600"
+                        className="font-mono tracking-tight"
+                      >
+                        +0.13 mm
+                      </text>
+                    </svg>
+                  ) : (
+                    /* Nominal Dimension Badge: 148.00 ± 0.05 mm centered directly above line */
+                    <svg x="48%" y="85%" overflow="visible" className="transition-all duration-300">
+                      <rect
+                        x="-54"
+                        y="-26"
+                        width="108"
+                        height="20"
+                        fill="#F6EFDB"
+                        stroke="#124ead"
+                        strokeWidth="1"
+                        rx="2.5"
+                      />
+                      <text
+                        x="0"
+                        y="-16"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill="#124ead"
+                        fontSize="10"
+                        fontWeight="700"
+                        className="font-mono"
+                      >
+                        148.00 ± 0.05 mm
+                      </text>
+                    </svg>
+                  )}
                 </g>
 
                 {/* Spindle Bore Leader Dimension: Ø48.00 H7 */}
@@ -727,13 +867,47 @@ export function ArchitectModeExperience() {
                 </g>
 
                 {/* GD&T Feature Control Frame: [ ⌖ | Ø0.02 | A | B ] */}
-                <g className="font-mono text-[10px]">
-                  <polyline points="48%,62% 43%,72% 35%,72%" fill="none" stroke="#124ead" strokeWidth="1.4" />
-                  <rect x="18%" y="67%" width="120" height="20" fill="#FFFBF0" stroke="#124ead" strokeWidth="1.2" />
-                  <text x="20%" y="77%" fill="#124ead" fontWeight="bold">
-                    ⌖ | Ø0.02 | A | B
-                  </text>
+                <g className="font-mono text-[9px]">
+                  <polyline points="48%,52% 36%,52% 26%,52%" fill="none" stroke="#124ead" strokeWidth="1.4" />
+                  <svg x="26%" y="52%" overflow="visible">
+                    <rect
+                      x="-106"
+                      y="-10"
+                      width="106"
+                      height="20"
+                      fill="#FFFBF0"
+                      stroke="#124ead"
+                      strokeWidth="1.2"
+                      rx="2"
+                    />
+                    <text
+                      x="-53"
+                      y="0"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="#124ead"
+                      fontWeight="bold"
+                      fontSize="9"
+                      className="font-mono tracking-tight"
+                    >
+                      ⌖ | Ø0.02 | A | B
+                    </text>
+                  </svg>
                 </g>
+
+                {/* Leader Line from Metrology Error Card to Out-of-Spec Dimension */}
+                {errorProgress > 0.3 && (
+                  <g className="transition-opacity duration-300">
+                    <circle cx="21%" cy="80%" r="2" fill="#D92D20" />
+                    <polyline
+                      points="21%,80% 26%,80% 33.5%,85%"
+                      fill="none"
+                      stroke="#D92D20"
+                      strokeWidth="1.6"
+                      markerEnd="url(#blueprint-arrow-error)"
+                    />
+                  </g>
+                )}
 
                 {/* Overall Height Dimension: 92.00 mm */}
                 <g className="font-mono text-[10px] text-[#124ead] font-bold hidden sm:block">
@@ -757,7 +931,7 @@ export function ArchitectModeExperience() {
               </svg>
 
               {/* ------------------------------------------------------------- */}
-              {/* FLOATING ENGINEERING INFORMATION CARDS (STAGE B & C)          */}
+              {/* FLOATING ENGINEERING INFORMATION CARDS (PERIMETER HUD BLOCKS) */}
               {/* ------------------------------------------------------------- */}
               <div
                 className="absolute inset-0 pointer-events-none transition-all duration-300"
@@ -780,17 +954,48 @@ export function ArchitectModeExperience() {
                   </div>
                 </div>
 
-                {/* Card 2: Spindle Bore Metrology (Bottom-Left) */}
-                <div className="absolute bottom-6 left-5 max-w-[220px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[4px] p-2 sm:p-2.5 shadow-[3px_3px_0_#101418] pointer-events-auto hover:translate-x-0.5 transition-transform">
-                  <div className="font-mono text-[9px] font-bold text-[#ff5500] uppercase tracking-wider">
-                    CRITICAL METROLOGY
-                  </div>
-                  <div className="font-mono text-[11px] sm:text-xs font-bold text-[#101418]">
-                    Ø48.000 +0.012/-0.000
-                  </div>
-                  <div className="font-mono text-[9px] text-[#5c6470] mt-0.5">
-                    Cylindricity 0.004 mm // Runout ↗ 0.002
-                  </div>
+                {/* Card 2: Spindle Bore Metrology -> Metrology Error (Bottom-Left) */}
+                <div
+                  className={`absolute bottom-6 left-5 max-w-[215px] sm:max-w-[230px] bg-[#FFFBF0] rounded-[4px] p-2 sm:p-2.5 pointer-events-auto hover:translate-x-0.5 transition-all duration-300 ${
+                    errorProgress > 0.3
+                      ? "border-[1.5px] border-[#D92D20] shadow-[3px_3px_0_#D92D20]"
+                      : "border-[1.5px] border-[#101418] shadow-[3px_3px_0_#101418]"
+                  }`}
+                >
+                  {errorProgress > 0.3 ? (
+                    <div>
+                      <div className="flex items-center justify-between border-b border-[#D92D20]/25 pb-1 mb-1 font-mono text-[9px]">
+                        <span className="font-bold text-[#D92D20] flex items-center gap-1.5 uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#D92D20] animate-ping shrink-0" />
+                          METROLOGY ERROR
+                        </span>
+                        <span className="bg-[#FEE4E2] text-[#D92D20] font-bold px-1.5 py-0.5 rounded border border-[#D92D20]/40 text-[8.5px]">
+                          FAIL +0.13
+                        </span>
+                      </div>
+                      <div className="font-mono text-[11px] sm:text-xs font-bold text-[#D92D20]">
+                        148.18 mm{" "}
+                        <span className="text-[#5c6470] font-normal text-[9.5px]">
+                          (SPEC ±0.05)
+                        </span>
+                      </div>
+                      <div className="font-mono text-[9px] text-[#5c6470] mt-0.5 leading-tight">
+                        DIM #01 Flange Width exceeds ASME tolerance limit
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="font-mono text-[9px] font-bold text-[#ff5500] uppercase tracking-wider">
+                        CRITICAL METROLOGY
+                      </div>
+                      <div className="font-mono text-[11px] sm:text-xs font-bold text-[#101418]">
+                        Ø48.000 +0.012/-0.000
+                      </div>
+                      <div className="font-mono text-[9px] text-[#5c6470] mt-0.5">
+                        Cylindricity 0.004 mm // Runout ↗ 0.002
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card 3: Material & Surface Spec (Top-Right) */}
@@ -821,7 +1026,11 @@ export function ArchitectModeExperience() {
                 </div>
 
                 {/* Card 5: Autonomous DFM Verification (Center-Right) */}
-                <div className="absolute top-1/2 -translate-y-1/2 right-4 max-w-[190px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[4px] p-2 shadow-[3px_3px_0_#101418] pointer-events-auto hover:translate-x-0.5 transition-transform hidden lg:block">
+                <div
+                  className={`absolute top-1/2 -translate-y-1/2 right-4 max-w-[190px] bg-[#FFFBF0] border-[1.5px] border-[#101418] rounded-[4px] p-2 shadow-[3px_3px_0_#101418] pointer-events-auto hover:translate-x-0.5 transition-all duration-300 hidden lg:block ${
+                    blueprintDrawProgress > 0.3 ? "opacity-0 pointer-events-none" : "opacity-100"
+                  }`}
+                >
                   <div className="font-mono text-[9px] font-bold text-[#101418] uppercase">
                     DFM SYNTHESIS
                   </div>
@@ -890,7 +1099,7 @@ export function ArchitectModeExperience() {
               </div>
               <div
                 className={`p-2 rounded-[3px] border transition-all ${
-                  currentPhaseIndex === 3
+                  currentPhaseIndex >= 3
                     ? "bg-[#FFFBF0] border-[#124ead] shadow-[2px_2px_0_#124ead] text-[#124ead] font-bold"
                     : "bg-[#FFFBF0]/60 border-[#101418]/15 text-[#5c6470]"
                 }`}
