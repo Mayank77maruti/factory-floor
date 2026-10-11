@@ -169,7 +169,8 @@ function FullScreenCanvas({
     };
 
     const preloadSequence = async () => {
-      const CRITICAL_TOTAL = 25;
+      // Expanded critical set: frames 001–025 PLUS every 10th frame (030, 040, … 300) = 53 frames
+      const CRITICAL_TOTAL = 53;
       let criticalLoaded = 0;
 
       // Priority 1: Load Frame 1 immediately
@@ -179,29 +180,30 @@ function FullScreenCanvas({
       criticalLoaded++;
       onCriticalProgressRef.current?.(criticalLoaded, CRITICAL_TOTAL);
 
-      // Priority 2: Preload next 24 critical frames (frames 2 to 25)
-      const criticalPromises: Promise<any>[] = [];
-      for (let i = 2; i <= Math.min(CRITICAL_TOTAL, totalFrames); i++) {
-        criticalPromises.push(
-          loadSingleFrame(i).then(() => {
-            if (!isMounted) return;
-            criticalLoaded++;
-            onCriticalProgressRef.current?.(criticalLoaded, CRITICAL_TOTAL);
-          })
-        );
+      // Priority 2: Preload next 24 critical frames (002 to 025) PLUS every 10th frame (030 to 300)
+      const criticalIndices: number[] = [];
+      for (let i = 2; i <= Math.min(25, totalFrames); i++) {
+        criticalIndices.push(i);
       }
+      for (let i = 30; i <= totalFrames; i += 10) {
+        criticalIndices.push(i);
+      }
+
+      const criticalPromises = criticalIndices.map((idx) =>
+        loadSingleFrame(idx).then(() => {
+          if (!isMounted) return;
+          criticalLoaded++;
+          onCriticalProgressRef.current?.(criticalLoaded, CRITICAL_TOTAL);
+        })
+      );
 
       await Promise.all(criticalPromises);
       if (!isMounted) return;
+
+      // Reveal gate: All 53 critical anchor frames are fully decoded before reveal!
       onCriticalCompleteRef.current?.();
 
-      // Priority 3: Milestones across timeline (every 10th frame)
-      for (let i = 30; i <= totalFrames; i += 10) {
-        if (!isMounted) return;
-        await loadSingleFrame(i);
-      }
-
-      // Priority 4: Fill remaining frames in background batches
+      // Priority 3: Post-reveal background fill for remaining frames (6-wide batches)
       const remaining: number[] = [];
       for (let i = 1; i <= totalFrames; i++) {
         if (!loadedFlagsRef.current[i]) remaining.push(i);
@@ -260,18 +262,23 @@ function FullScreenCanvas({
     handleScroll();
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const lerpFactor = prefersReducedMotion ? 1.0 : 0.12;
+    const lerpFactor = prefersReducedMotion ? 1.0 : 0.3;
 
     const renderLoop = () => {
       const diff = targetFrameRef.current - currentFrameRef.current;
+      const absDiff = Math.abs(diff);
 
-      if (Math.abs(diff) > 0.001) {
+      if (absDiff > 8) {
+        // Fast flick scroll: jump displayed index directly to target instead of easing
+        currentFrameRef.current = targetFrameRef.current;
+      } else if (absDiff > 0.001) {
+        // Small delta: tighten tracking with lerp 0.3
         currentFrameRef.current += diff * lerpFactor;
       } else {
         currentFrameRef.current = targetFrameRef.current;
       }
 
-      const frameToDraw = Math.round(currentFrameRef.current);
+      const frameToDraw = Math.max(1, Math.min(totalFrames, Math.round(currentFrameRef.current)));
 
       if (frameToDraw !== lastDrawnFrameRef.current || needsRedrawRef.current) {
         drawFrame(frameToDraw);
@@ -470,9 +477,9 @@ export function ArchitectHero({
       {/* 0. FULL-PAGE BLUEPRINT ASSET-GATED LOADER */}
       {!isLoaderDone && (
         <BlueprintLoader
-          progress={Math.round((criticalCount / 25) * 100)}
+          progress={Math.round((criticalCount / 53) * 100)}
           loadedCount={criticalCount}
-          totalCritical={25}
+          totalCritical={53}
           fontsReady={fontsReady}
           isWiping={isWiping}
           onWipeComplete={handleWipeComplete}

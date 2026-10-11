@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 interface BlueprintLoaderProps {
   progress: number; // 0 to 100
   loadedCount: number; // frames loaded in critical batch
-  totalCritical: number; // 25
+  totalCritical: number; // 53 anchor frames (001-025 + every 10th frame)
   fontsReady: boolean;
   isWiping: boolean;
   onWipeComplete: () => void;
@@ -108,7 +108,7 @@ export function BlueprintLoader({
             </span>
           </div>
           <div className="font-mono text-[11px] sm:text-[12px] text-[#5c6470] uppercase tracking-wider">
-            SHT. 00 · CRITICAL SEQUENCE · DECODING FRAMES 001 - {totalCritical.toString().padStart(3, "0")}
+            SHT. 00 · CRITICAL SEQUENCE · DECODING {totalCritical} ANCHOR FRAMES (001–025 + EVERY 10TH)
           </div>
         </div>
 
