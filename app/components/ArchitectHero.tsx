@@ -324,10 +324,8 @@ export interface ArchitectHeroProps {
 }
 
 export function ArchitectHero({
-  brandName = "[YOUR BRAND NAME]",
+  brandName = "Astraea",
 }: ArchitectHeroProps) {
-  const [currentBrand, setCurrentBrand] = useState(brandName);
-  const [isEditingBrand, setIsEditingBrand] = useState(false);
   const [isPastHero, setIsPastHero] = useState(false);
   const [isModeModalOpen, setIsModeModalOpen] = useState(false);
 
@@ -507,30 +505,11 @@ export function ArchitectHero({
             isRevealed ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
           }`}>
             {/* Blueprint Geometric Logo + Brand Name */}
-            <div className="flex items-center gap-2 pr-3 sm:pr-4 border-r border-[#292929]/20">
+            <div className="flex items-center gap-2 pr-3 sm:pr-4 border-r border-[#292929]/20 select-none">
               <AstraeaLogo variant="mark" size="sm" />
-
-              <div className="flex items-center">
-                {isEditingBrand ? (
-                  <input
-                    type="text"
-                    value={currentBrand}
-                    onChange={(e) => setCurrentBrand(e.target.value)}
-                    onBlur={() => setIsEditingBrand(false)}
-                    onKeyDown={(e) => e.key === "Enter" && setIsEditingBrand(false)}
-                    autoFocus
-                    className="text-xs sm:text-sm font-semibold tracking-tight text-[#292929] bg-white border border-[#124ead] px-1 py-0.5 rounded outline-none w-36"
-                  />
-                ) : (
-                  <span
-                    onClick={() => setIsEditingBrand(true)}
-                    title="Click to edit brand name"
-                    className="text-xs sm:text-sm font-bold tracking-tight text-[#292929] cursor-pointer hover:text-[#124ead] transition-colors select-none"
-                  >
-                    {currentBrand}
-                  </span>
-                )}
-              </div>
+              <span className="text-xs sm:text-sm font-bold tracking-tight text-[#292929] select-none">
+                {brandName}
+              </span>
             </div>
 
             {/* Navigation Links */}
