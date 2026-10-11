@@ -540,6 +540,7 @@ export function ArchitectHero({
                 ref={exploreBtnRef}
                 type="button"
                 onClick={() => setIsModeModalOpen(true)}
+                title="Engineering Mode vs Frontline Mode"
                 className="group inline-flex items-center gap-2 bg-[#124ead] hover:bg-[#0d3b85] text-white text-[11px] sm:text-[12px] font-semibold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-[3px] transition-all shadow-sm active:scale-95 select-none cursor-pointer"
               >
                 <AstraeaLogo variant="mark" size="xs" theme="orange" />

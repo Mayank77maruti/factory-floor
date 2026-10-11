@@ -47,7 +47,7 @@ export function LandingFooter() {
             <ul className="space-y-2 text-[#424a56]">
               <li>
                 <Link href="/architect" className="hover:text-[#124ead] hover:underline transition-colors flex items-center gap-1.5 font-medium">
-                  <span className="text-[#124ead]">↳</span> Architect Mode
+                  <span className="text-[#124ead]">↳</span> Engineering Mode
                 </Link>
               </li>
               <li>

@@ -84,26 +84,30 @@ export function PlatformModeModal({
             id="platform-mode-title"
             className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#101418]"
           >
-            Choose Workspace Mode
+            Engineering Mode / Frontline Mode
           </h2>
+          <p className="text-xs sm:text-sm font-mono text-[#5c6470] mt-1">
+            Engineering Mode vs Frontline Mode
+          </p>
         </div>
 
         {/* 2-Column Mode Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-          {/* Card 1: Architect Mode */}
+          {/* Card 1: Engineering Mode */}
           <Link
             href="/architect"
             onClick={onClose}
+            title="Engineering Mode vs Frontline Mode"
             className="group flex flex-col bg-[#FFFBF0] rounded-xl border-2 border-[#101418] shadow-[5px_5px_0_#101418] hover:shadow-[7px_7px_0_#101418] hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:shadow-[7px_7px_0_#101418] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#124ead] focus-visible:ring-offset-2 transition-all duration-200 overflow-hidden cursor-pointer"
           >
             {/* Visual Frame */}
             <div className="relative w-full h-44 sm:h-48 md:h-52 bg-[#EAE2CE] border-b-2 border-[#101418] flex items-center justify-center p-3 overflow-hidden">
               <div className="absolute top-2.5 left-2.5 z-10 bg-[#124ead] text-white text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-[2px] tracking-wider uppercase shadow-[2px_2px_0_#101418]">
-                MODE 01 // ARCHITECT
+                MODE 01 // ENGINEERING
               </div>
               <Image
                 src="/modes/architect-mode.png"
-                alt="Architect Mode interface preview"
+                alt="Engineering Mode interface preview"
                 fill
                 sizes="(max-width: 768px) 100vw, 420px"
                 className="object-contain p-3 group-hover:scale-105 transition-transform duration-300 motion-reduce:transform-none"
@@ -118,7 +122,7 @@ export function PlatformModeModal({
                   CAD AUTOMATION &amp; METROLOGY
                 </span>
                 <h3 className="text-xl sm:text-2xl font-bold text-[#101418] tracking-tight group-hover:text-[#124ead] transition-colors">
-                  Architect Mode
+                  Engineering Mode
                 </h3>
 
                 {/* Capability Tags */}
@@ -137,7 +141,7 @@ export function PlatformModeModal({
 
               {/* Action Button */}
               <div className="mt-2 bg-[#ff5500] group-hover:bg-[#e04a00] text-white py-2.5 sm:py-3 px-4 rounded-lg border-2 border-[#101418] shadow-[3px_3px_0_#101418] group-hover:shadow-[4px_4px_0_#101418] transition-all flex items-center justify-between font-bold text-sm tracking-wide">
-                <span>Launch Architect Mode</span>
+                <span>Launch Engineering Mode</span>
                 <span className="text-white text-base group-hover:translate-x-1 transition-transform motion-reduce:transform-none">
                   →
                 </span>
@@ -149,6 +153,7 @@ export function PlatformModeModal({
           <Link
             href="/frontline"
             onClick={onClose}
+            title="Engineering Mode vs Frontline Mode"
             className="group flex flex-col bg-[#FFFBF0] rounded-xl border-2 border-[#101418] shadow-[5px_5px_0_#101418] hover:shadow-[7px_7px_0_#101418] hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:shadow-[7px_7px_0_#101418] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5500] focus-visible:ring-offset-2 transition-all duration-200 overflow-hidden cursor-pointer"
           >
             {/* Visual Frame */}

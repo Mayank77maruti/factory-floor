@@ -632,7 +632,7 @@ export function ArchitectModeExperience() {
         {/* =================================================================== */}
         <div className="relative w-full z-30 flex items-center justify-between pt-16 sm:pt-20 lg:pt-22 pb-2 px-4 sm:px-8 md:px-12 text-[10px] sm:text-xs font-mono text-[#5c6470] tracking-wider pointer-events-none">
           <div className="flex items-center gap-2 sm:gap-3 bg-[#FFFBF0]/90 px-2.5 py-1 rounded-[3px] border border-[#101418]/20 shadow-[1px_1px_0_#101418]/15 backdrop-blur-[2px]">
-            <span className="font-bold text-[#124ead]">SHT. M-01 // ARCHITECT MODE</span>
+            <span className="font-bold text-[#124ead]">SHT. M-01 // ENGINEERING MODE</span>
             <span className="hidden md:inline-block text-[#101418]/30">//</span>
             <span className="hidden md:inline-block uppercase text-[#101418]">
               3D CAD TO 2D BLUEPRINT SYNTHESIS &amp; ASME METROLOGY
@@ -1060,7 +1060,7 @@ export function ArchitectModeExperience() {
 
             {/* Main Headline */}
             <h2 className="text-3xl sm:text-4xl lg:text-[2.8rem] xl:text-[3.2rem] font-bold tracking-tight text-[#101418] leading-[1.05] mb-3 sm:mb-4">
-              Explore Architect Mode
+              Explore Engineering Mode
             </h2>
 
             {/* Description Copy */}
@@ -1114,7 +1114,7 @@ export function ArchitectModeExperience() {
                 href="/architect"
                 className="group inline-flex items-center gap-2.5 bg-[#ff5500] hover:bg-[#e04a00] text-white font-bold text-sm sm:text-base py-3 px-6 rounded-[4px] border-2 border-[#101418] shadow-[4px_4px_0_#101418] hover:shadow-[5px_5px_0_#101418] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer"
               >
-                <span>Explore Architect Mode</span>
+                <span>Explore Engineering Mode</span>
                 <span className="text-white text-base group-hover:translate-x-1 transition-transform">
                   →
                 </span>
