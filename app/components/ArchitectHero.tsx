@@ -93,24 +93,30 @@ function FullScreenCanvas({
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    // Calculate aspect ratio cover math so image covers 100% of viewport without bars
-    const imgRatio = img.naturalWidth / img.naturalHeight;
-    const canvasRatio = width / height;
+    // Dynamically align canvas framing with the bottom of the hero paper banner
+    // so the architect's head and workstation sit right underneath the banner dividing line
+    const heroBanner = typeof document !== "undefined" ? document.getElementById("hero-headline-banner") : null;
+    const bannerH = heroBanner ? heroBanner.getBoundingClientRect().height : height * 0.478;
 
-    let renderW = width;
-    let renderH = height;
-    let offsetX = 0;
-    let offsetY = 0;
+    const headImgY = 466; // Top apex of architect's head/hair in 1080p source image
+    const desiredHeadY = bannerH + 6; // Sit cleanly 6px below bottom paper border
 
-    if (canvasRatio > imgRatio) {
-      renderW = width;
-      renderH = width / imgRatio;
-      offsetY = (height - renderH) / 2;
-    } else {
-      renderH = height;
-      renderW = height * imgRatio;
-      offsetX = (width - renderW) / 2;
+    let scale = Math.max(width / img.naturalWidth, height / img.naturalHeight);
+
+    if (desiredHeadY / headImgY > scale) {
+      scale = desiredHeadY / headImgY;
     }
+
+    let offsetY = desiredHeadY - scale * headImgY;
+
+    if (offsetY > 0) offsetY = 0;
+    if (offsetY + scale * img.naturalHeight < height) {
+      offsetY = height - scale * img.naturalHeight;
+    }
+
+    const renderW = Math.ceil(scale * img.naturalWidth);
+    const renderH = Math.ceil(scale * img.naturalHeight);
+    const offsetX = Math.floor((width - renderW) / 2);
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
@@ -576,7 +582,10 @@ export function ArchitectHero({
             Sits at the top of the page on warm parchment grid.
             As user scrolls down, this block scrolls UP and reveals
             the fixed canvas full-screen underneath! */}
-        <section className="relative w-full min-h-[50vh] bg-[#f4ebd7] bg-drafting-grid border-b border-[#292929] pt-28 sm:pt-32 pb-10 sm:pb-12 px-4 sm:px-8 md:px-12 flex flex-col items-center justify-center pointer-events-auto">
+        <section
+          id="hero-headline-banner"
+          className="relative w-full min-h-[47.5vh] bg-[#f4ebd7] bg-drafting-grid border-b border-[#292929] pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-10 px-4 sm:px-8 md:px-12 flex flex-col items-center justify-center pointer-events-auto"
+        >
           <div className="relative w-full max-w-5xl text-center">
 
             {/* Left Sketched Annotation: "INDUSTRIAL INTELLIGENCE" */}
